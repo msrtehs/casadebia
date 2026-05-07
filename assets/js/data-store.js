@@ -1,0 +1,211 @@
+/* ============================================
+   CASA DE BIA — Data Store
+   Camada centralizada de dados que pode ser substituída
+   por Firebase na Etapa 8b sem mudar o resto do código.
+   ============================================ */
+(function () {
+  const STORAGE_KEY = 'casadebia_admin_data_v2';
+  const ORDERS_KEY = 'casadebia_orders_v1';
+  // Limpa versão antiga para evitar dados desatualizados durante o desenvolvimento
+  try { localStorage.removeItem('casadebia_admin_data_v1'); } catch {}
+  const SESSION_KEY = 'casadebia_admin_session';
+
+  // ===== DEFAULTS — Estado inicial dos dados (única fonte de verdade) =====
+  const DEFAULTS = {
+    auth: {
+      // ⚠️ Senha plana só na fase localStorage. Firebase Auth substitui na 8b.
+      password: 'casadebia123'
+    },
+    config: {
+      whatsappNumber: '5571999652027',
+      gasPrice: 40
+    },
+    packages: {
+      basico:    { id: 'basico',    name: 'Básico',    price: 299.90, capacity: 20,  extraPerGuest: 15, includesGas: false, includesDecoration: false, includesPhotographer: false },
+      essencial: { id: 'essencial', name: 'Essencial', price: 590,    capacity: 100, extraPerGuest: 0,  includesGas: false, includesDecoration: false, includesPhotographer: false },
+      premium:   { id: 'premium',   name: 'Premium',   price: 899,    capacity: 100, extraPerGuest: 0,  includesGas: true,  includesDecoration: true,  includesPhotographer: false },
+      promax:    { id: 'promax',    name: 'Pro Max',   price: 1590,   capacity: 100, extraPerGuest: 0,  includesGas: true,  includesDecoration: true,  includesPhotographer: true }
+    },
+    decoration: {
+      combos: [
+        { id: 'pm-classic',  type: 'pegue-monte', name: 'Combo Clássico', description: 'Painel decorativo, balões coloridos e itens essenciais para você montar como preferir.', items: ['1 painel decorativo 2x2m', '50 balões coloridos', '1 toalha de mesa temática', 'Itens descartáveis para 20 pessoas'], price: 180, image: 'https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=800&q=80' },
+        { id: 'pm-premium',  type: 'pegue-monte', name: 'Combo Premium',  description: 'Estrutura mais completa para festas elaboradas, com painel duplo e arco de balões.',         items: ['Painel duplo decorativo', 'Arco de balões 3m', 'Mesa principal decorada', 'Itens para 50 pessoas'],                  price: 320, image: 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&w=800&q=80' },
+        { id: 'pm-tematico', type: 'pegue-monte', name: 'Combo Temático', description: 'Decoração temática personalizada (princesa, super-heróis, safari e outros temas).',         items: ['Painel temático personalizado', 'Topo de bolo temático', 'Balões e itens do tema', 'Toalha e talheres temáticos'],   price: 280, image: 'https://images.unsplash.com/photo-1464047736614-af63643285bf?auto=format&fit=crop&w=800&q=80' },
+        { id: 'completa-essencial', type: 'completa', name: 'Decoração Essencial',         description: 'Decoração completa com montagem, ambientação e finalização inclusas.',                                  items: ['Painel + arco de balões', 'Mesa principal decorada', 'Mesa de doces ambientada', 'Montagem e desmontagem'],                                                       price: 650,  image: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=800&q=80' },
+        { id: 'completa-luxo',      type: 'completa', name: 'Decoração Luxo',              description: 'Decoração sofisticada com floral natural, iluminação especial e atendimento dedicado.',               items: ['Estrutura cenográfica completa', 'Arranjos florais naturais', 'Iluminação cênica', 'Mesas de doces e bolo profissionais', 'Equipe de montagem dedicada'],     price: 1280, image: 'https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?auto=format&fit=crop&w=800&q=80' },
+        { id: 'completa-infantil',  type: 'completa', name: 'Decoração Infantil Completa', description: 'Para festas infantis com todos os elementos pensados para encantar as crianças.',                       items: ['Painel temático grande', 'Arco de balões duplo', 'Mesa de doces ambientada', 'Cenários para fotos', 'Itens lúdicos espalhados'],                                price: 890,  image: 'https://images.unsplash.com/photo-1543872084-c7bd3822856f?auto=format&fit=crop&w=800&q=80' }
+      ],
+      addons: [
+        { id: 'led-letras',     name: 'Letreiro LED personalizado',  description: 'Nome ou mensagem em LED',           price: 120 },
+        { id: 'globo-luz',      name: 'Globo de luz / Bola disco',   description: 'Iluminação especial para pista',    price: 90  },
+        { id: 'baloes-extras',  name: 'Balões extras (100 unid.)',   description: 'Mais balões para incrementar',      price: 60  },
+        { id: 'maquina-fumaca', name: 'Máquina de fumaça',           description: 'Efeito especial para fotos',        price: 110 },
+        { id: 'arco-floral',    name: 'Arco floral natural',         description: 'Flores naturais para entrada',      price: 220 },
+        { id: 'mesa-bolo',      name: 'Mesa de bolo decorada extra', description: 'Mesa adicional para bolo principal',price: 150 }
+      ]
+    },
+    services: {
+      animadora:     { id: 'animadora',     name: 'Animadora Infantil', icon: 'party-popper',     desc: 'Recreação, pintura facial, balões e mais. Marque os serviços desejados.', mode: 'multi-checkbox', items: [
+        { id: 'recreacao',      name: 'Recreação / Animação', price: 200 },
+        { id: 'pintura-facial', name: 'Pintura facial',       price: 150 },
+        { id: 'baloes',         name: 'Escultura com balões', price: 130 },
+        { id: 'oficinas',       name: 'Oficinas diversas',    price: 180 },
+        { id: 'locucao',        name: 'Locução',              price: 120 }
+      ]},
+      recepcionista: { id: 'recepcionista', name: 'Recepcionista', icon: 'user-check',         desc: 'Atendimento aos convidados na entrada e durante o evento.', mode: 'hours',  hourlyRate: 45 },
+      fritadeira:    { id: 'fritadeira',    name: 'Fritadeira',    icon: 'utensils-crossed',   desc: 'Profissional fritando salgados na hora durante o evento.',  mode: 'hours',  hourlyRate: 55 },
+      seguranca:     { id: 'seguranca',     name: 'Segurança',     icon: 'shield',             desc: 'Equipe de segurança com opções de controle de acesso.',     mode: 'qty-hours-control', hourlyRate: 70, controlOptions: [
+        { id: 'nenhum',     name: 'Sem controle',         price: 0 },
+        { id: 'lista',      name: 'Por lista de nomes',   price: 80 },
+        { id: 'pulseiras',  name: 'Por pulseiras',        price: 120 }
+      ]},
+      garcom:        { id: 'garcom',        name: 'Garçom',        icon: 'hand-platter',       desc: 'Atendimento de bebidas e mesa durante o evento.',           mode: 'qty-hours', hourlyRate: 50 },
+      dj:            { id: 'dj',            name: 'DJ',            icon: 'disc-3',             desc: 'Som profissional com diferentes estilos.',                  mode: 'type-hours', hourlyRate: 80, types: [
+        { id: 'basico',   name: 'Som básico',                 extraPerHour: 0 },
+        { id: 'completo', name: 'Som + iluminação',           extraPerHour: 30 },
+        { id: 'premium',  name: 'Premium (som + luz + mesa)', extraPerHour: 60 }
+      ]},
+      fotografo:     { id: 'fotografo',     name: 'Fotógrafo',     icon: 'camera',             desc: 'Registre cada momento do seu evento.',                       mode: 'package', packages: [
+        { id: 'so-fotos',      name: 'Só fotos',           desc: 'Fotos profissionais editadas',         price: 450 },
+        { id: 'fotos-stories', name: 'Fotos + stories',    desc: 'Fotos + stories instantâneos',         price: 650 },
+        { id: 'completa',      name: 'Cobertura completa', desc: 'Fotos, stories e vídeo highlights',    price: 980 }
+      ]},
+      storymaker:    { id: 'storymaker',    name: 'Story Maker',   icon: 'video',              desc: 'Profissional dedicado às redes sociais durante o evento.', mode: 'package', packages: [
+        { id: 'sm-2h',        name: '2 horas',         desc: 'Cobertura curta para redes', price: 200 },
+        { id: 'sm-4h',        name: '4 horas',         desc: 'Cobertura padrão',           price: 380 },
+        { id: 'sm-completo',  name: 'Evento completo', desc: 'Acompanhamento total',       price: 580 }
+      ]}
+    }
+  };
+
+  // Deep clone simples (suficiente para JSON-safe data)
+  const clone = (obj) => JSON.parse(JSON.stringify(obj));
+
+  // ===== LOAD / SAVE =====
+  const loadData = () => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return clone(DEFAULTS);
+      const parsed = JSON.parse(raw);
+      // Merge profundo: dados salvos têm prioridade, mas chaves novas dos defaults entram
+      const merged = Object.assign(clone(DEFAULTS), parsed, {
+        config: Object.assign({}, DEFAULTS.config, parsed.config || {}),
+        auth: Object.assign({}, DEFAULTS.auth, parsed.auth || {}),
+        // Pacotes: preserva edições, mas adiciona pacotes novos do default
+        packages: Object.assign({}, DEFAULTS.packages, parsed.packages || {})
+      });
+      // Para cada pacote existente, garante todas as chaves novas (ex: includesPhotographer)
+      Object.keys(merged.packages).forEach(k => {
+        if (DEFAULTS.packages[k]) {
+          merged.packages[k] = Object.assign({}, DEFAULTS.packages[k], merged.packages[k]);
+        }
+      });
+      return merged;
+    } catch { return clone(DEFAULTS); }
+  };
+
+  const saveData = (data) => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      return true;
+    } catch { return false; }
+  };
+
+  const resetData = () => {
+    localStorage.removeItem(STORAGE_KEY);
+    return clone(DEFAULTS);
+  };
+
+  // ===== APLICA OS DADOS NAS GLOBAIS USADAS PELO SIMULADOR =====
+  const applyToSimulator = (data) => {
+    window.SIM_PRICING = {
+      packages: data.packages,
+      gas: data.config.gasPrice
+    };
+    window.DECORATION_DATA = data.decoration;
+    // Adapter: services com items precisam de unit/etc para compatibilidade
+    window.SERVICES_DATA = data.services;
+    if (window.CASA_CONFIG) {
+      window.CASA_CONFIG.whatsapp.number = data.config.whatsappNumber;
+    }
+  };
+
+  // ===== HISTÓRICO DE PEDIDOS =====
+  const loadOrders = () => {
+    try {
+      const raw = localStorage.getItem(ORDERS_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch { return []; }
+  };
+
+  const saveOrder = (order) => {
+    try {
+      const orders = loadOrders();
+      const newOrder = Object.assign({
+        id: 'ord_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+        createdAt: new Date().toISOString()
+      }, order);
+      orders.unshift(newOrder);
+      // Limita a 200 pedidos para não estourar localStorage
+      const trimmed = orders.slice(0, 200);
+      localStorage.setItem(ORDERS_KEY, JSON.stringify(trimmed));
+      return newOrder;
+    } catch { return null; }
+  };
+
+  const deleteOrder = (id) => {
+    try {
+      const orders = loadOrders().filter(o => o.id !== id);
+      localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
+      return true;
+    } catch { return false; }
+  };
+
+  const clearOrders = () => {
+    localStorage.removeItem(ORDERS_KEY);
+  };
+
+  // ===== AUTENTICAÇÃO (sessão local — Firebase Auth substitui na 8b) =====
+  const isLoggedIn = () => {
+    try { return sessionStorage.getItem(SESSION_KEY) === 'authenticated'; }
+    catch { return false; }
+  };
+  const login = (password) => {
+    const data = loadData();
+    if (password === data.auth.password) {
+      try { sessionStorage.setItem(SESSION_KEY, 'authenticated'); } catch {}
+      return true;
+    }
+    return false;
+  };
+  const logout = () => {
+    try { sessionStorage.removeItem(SESSION_KEY); } catch {}
+  };
+  const changePassword = (newPassword) => {
+    const data = loadData();
+    data.auth.password = newPassword;
+    return saveData(data);
+  };
+
+  // ===== EXPÕE A API =====
+  window.DataStore = {
+    DEFAULTS: clone(DEFAULTS),
+    loadData,
+    saveData,
+    resetData,
+    applyToSimulator,
+    loadOrders,
+    saveOrder,
+    deleteOrder,
+    clearOrders,
+    isLoggedIn,
+    login,
+    logout,
+    changePassword,
+    STORAGE_KEY,
+    ORDERS_KEY
+  };
+
+  // Aplicação automática nas globais ao carregar
+  applyToSimulator(loadData());
+})();

@@ -1,0 +1,79 @@
+/* ============================================
+   CASA DE BIA — Design Tokens
+   ============================================ */
+:root {
+  /* Cores primárias */
+  --rose: #C8445A;
+  --rose-light: #F5E8EB;
+  --rose-dark: #A8334A;
+  --gold: #D4A942;
+  --gold-light: #FAF3E0;
+  --gold-dark: #B58E2F;
+
+  /* Neutros */
+  --dark: #1C1410;
+  --text: #3D2B1F;
+  --muted: #8A6E65;
+  --bg: #FDF9F7;
+  --white: #FFFFFF;
+  --border: #EDE4DF;
+
+  /* WhatsApp */
+  --whatsapp: #25D366;
+  --whatsapp-dark: #128C7E;
+
+  /* Tipografia */
+  --font-display: 'Playfair Display', Georgia, serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+  /* Escala tipográfica */
+  --fs-xs: 0.75rem;
+  --fs-sm: 0.875rem;
+  --fs-base: 1rem;
+  --fs-md: 1.125rem;
+  --fs-lg: 1.25rem;
+  --fs-xl: 1.5rem;
+  --fs-2xl: 2rem;
+  --fs-3xl: 2.75rem;
+  --fs-4xl: 3.75rem;
+  --fs-5xl: 5rem;
+
+  /* Espaçamento */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --space-8: 4rem;
+  --space-9: 6rem;
+  --space-10: 8rem;
+
+  /* Sombras */
+  --shadow-sm: 0 1px 2px rgba(28, 20, 16, 0.06);
+  --shadow-md: 0 4px 12px rgba(28, 20, 16, 0.08);
+  --shadow-lg: 0 12px 32px rgba(28, 20, 16, 0.12);
+  --shadow-xl: 0 24px 64px rgba(28, 20, 16, 0.18);
+  --shadow-rose: 0 12px 32px rgba(200, 68, 90, 0.25);
+  --shadow-gold: 0 12px 32px rgba(212, 169, 66, 0.25);
+
+  /* Bordas */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --radius-full: 9999px;
+
+  /* Transições */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 600ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Layout */
+  --container-max: 1280px;
+  --navbar-height: 84px;
+  --z-navbar: 100;
+  --z-floating: 90;
+  --z-modal: 200;
+}

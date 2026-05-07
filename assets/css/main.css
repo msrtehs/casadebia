@@ -1,0 +1,10 @@
+/* ============================================
+   CASA DE BIA — Entry CSS
+   Importa todos os arquivos de estilo na ordem
+   ============================================ */
+@import url('variables.css');
+@import url('base.css');
+@import url('components.css');
+
+/* Padding-top global para compensar navbar fixa em páginas internas */
+.has-fixed-nav { padding-top: var(--navbar-height); }

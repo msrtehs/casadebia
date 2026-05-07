@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin — Casa de Bia</title>
+  <meta name="robots" content="noindex,nofollow">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/main.css">
+  <link rel="stylesheet" href="assets/css/admin.css">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='50' fill='%23C8445A'/><text x='50' y='62' text-anchor='middle' font-family='Georgia' font-size='42' fill='white' font-weight='700'>CB</text></svg>">
+</head>
+<body class="admin-body">
+
+  <div class="admin-layout">
+    <!-- SIDEBAR -->
+    <aside class="admin-sidebar">
+      <div class="admin-brand">
+        <div class="admin-brand-logo">CB</div>
+        <div class="admin-brand-text">
+          <span class="admin-brand-name">Casa de Bia</span>
+          <span class="admin-brand-role">Painel Admin</span>
+        </div>
+      </div>
+
+      <a class="admin-nav-link active" data-section="dashboard">
+        <i data-lucide="layout-dashboard"></i>Dashboard
+      </a>
+      <a class="admin-nav-link" data-section="pacotes">
+        <i data-lucide="package"></i>Pacotes
+      </a>
+      <a class="admin-nav-link" data-section="decoracao">
+        <i data-lucide="palette"></i>Decoração
+      </a>
+      <a class="admin-nav-link" data-section="servicos">
+        <i data-lucide="sparkles"></i>Serviços
+      </a>
+      <a class="admin-nav-link" data-section="historico">
+        <i data-lucide="receipt"></i>Histórico
+      </a>
+      <a class="admin-nav-link" data-section="config">
+        <i data-lucide="settings"></i>Configurações
+      </a>
+
+      <div class="admin-nav-spacer"></div>
+
+      <a class="admin-nav-link" href="index.html" target="_blank">
+        <i data-lucide="external-link"></i>Ver site
+      </a>
+      <div class="admin-logout">
+        <a class="admin-nav-link" id="btnLogout">
+          <i data-lucide="log-out"></i>Sair
+        </a>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="admin-main">
+
+      <!-- DASHBOARD -->
+      <section class="admin-section active" id="section-dashboard">
+        <div class="admin-page-header">
+          <div>
+            <h1>Dashboard</h1>
+            <p>Visão geral dos pedidos recebidos pelo simulador.</p>
+          </div>
+        </div>
+
+        <div class="stat-cards">
+          <div class="stat-card">
+            <div class="stat-card-icon"><i data-lucide="receipt"></i></div>
+            <div>
+              <div class="stat-card-num" id="statOrders">0</div>
+              <div class="stat-card-label">Total de pedidos</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-icon gold"><i data-lucide="calendar-check"></i></div>
+            <div>
+              <div class="stat-card-num" id="statLast7">0</div>
+              <div class="stat-card-label">Últimos 7 dias</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-icon"><i data-lucide="trending-up"></i></div>
+            <div>
+              <div class="stat-card-num" id="statRevenue">R$ 0</div>
+              <div class="stat-card-label">Soma dos orçamentos</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-icon gold"><i data-lucide="bar-chart-3"></i></div>
+            <div>
+              <div class="stat-card-num" id="statAvg">R$ 0</div>
+              <div class="stat-card-label">Ticket médio</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="admin-card">
+          <div class="admin-card-header">
+            <div>
+              <h2>Pedidos recentes</h2>
+              <p>Últimos 3 orçamentos enviados pelo simulador.</p>
+            </div>
+            <a class="btn btn-outline btn-sm" data-section="historico" onclick="document.querySelector('[data-section=historico]').click()">
+              <i data-lucide="arrow-right"></i>Ver todos
+            </a>
+          </div>
+          <div id="recentOrders"></div>
+        </div>
+      </section>
+
+      <!-- PACOTES -->
+      <section class="admin-section" id="section-pacotes">
+        <div class="admin-page-header">
+          <div>
+            <h1>Pacotes</h1>
+            <p>Edite preços, capacidade e taxa de excedente dos pacotes do simulador.</p>
+          </div>
+        </div>
+        <div id="pacotesRoot"></div>
+      </section>
+
+      <!-- DECORAÇÃO -->
+      <section class="admin-section" id="section-decoracao">
+        <div class="admin-page-header">
+          <div>
+            <h1>Decoração</h1>
+            <p>Combos e adicionais disponíveis no simulador.</p>
+          </div>
+        </div>
+
+        <div class="admin-card">
+          <div class="admin-card-header">
+            <div>
+              <h2>Combos</h2>
+              <p>Pegue e Monte e Decoração Completa.</p>
+            </div>
+            <button class="btn btn-primary btn-sm" id="btnAddCombo">
+              <i data-lucide="plus"></i>Novo combo
+            </button>
+          </div>
+          <div class="admin-list" id="combosRoot"></div>
+        </div>
+
+        <div class="admin-card">
+          <div class="admin-card-header">
+            <div>
+              <h2>Adicionais</h2>
+              <p>Itens extras de decoração (LED, balões, etc.).</p>
+            </div>
+            <button class="btn btn-primary btn-sm" id="btnAddAddon">
+              <i data-lucide="plus"></i>Novo adicional
+            </button>
+          </div>
+          <div class="admin-list" id="addonsRoot"></div>
+        </div>
+      </section>
+
+      <!-- SERVIÇOS -->
+      <section class="admin-section" id="section-servicos">
+        <div class="admin-page-header">
+          <div>
+            <h1>Serviços</h1>
+            <p>Edite valores, horas e itens dos 8 serviços adicionais.</p>
+          </div>
+        </div>
+        <div id="servicosRoot"></div>
+      </section>
+
+      <!-- HISTÓRICO -->
+      <section class="admin-section" id="section-historico">
+        <div class="admin-page-header">
+          <div>
+            <h1>Histórico de pedidos</h1>
+            <p>Todos os orçamentos enviados pelo simulador.</p>
+          </div>
+          <div class="admin-page-actions">
+            <button class="btn btn-outline btn-sm" id="btnClearOrders">
+              <i data-lucide="trash-2"></i>Limpar histórico
+            </button>
+          </div>
+        </div>
+        <div id="historicoRoot"></div>
+      </section>
+
+      <!-- CONFIGURAÇÕES -->
+      <section class="admin-section" id="section-config">
+        <div class="admin-page-header">
+          <div>
+            <h1>Configurações</h1>
+            <p>Ajustes gerais do site e da conta admin.</p>
+          </div>
+        </div>
+
+        <div class="admin-card">
+          <div class="admin-card-header">
+            <div>
+              <h2>Configurações gerais</h2>
+              <p>Aplicadas em todo o site público.</p>
+            </div>
+          </div>
+          <div class="admin-grid cols-2">
+            <div class="admin-field">
+              <label>Número do WhatsApp <small>(apenas dígitos com DDI+DDD)</small></label>
+              <input type="tel" id="cfgWhatsapp" placeholder="5571999999999">
+              <span class="help">Para onde os pedidos são enviados. Exemplo: 5571999652027</span>
+            </div>
+            <div class="admin-field">
+              <label>Valor do gás <small>(adicional para Básico/Essencial)</small></label>
+              <div class="admin-field-prefix">
+                <span class="prefix">R$</span>
+                <input type="number" min="0" id="cfgGas">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="admin-card">
+          <div class="admin-card-header">
+            <div>
+              <h2>Segurança</h2>
+              <p>Gerenciar acesso ao painel.</p>
+            </div>
+          </div>
+          <div style="display:flex; gap: var(--space-3); flex-wrap: wrap;">
+            <button class="btn btn-outline" id="btnChangePassword">
+              <i data-lucide="key"></i>Alterar senha
+            </button>
+          </div>
+        </div>
+
+        <div class="admin-card">
+          <div class="admin-card-header">
+            <div>
+              <h2>Avançado</h2>
+              <p style="color: var(--rose-dark);">Cuidado: ações irreversíveis.</p>
+            </div>
+          </div>
+          <button class="btn btn-outline" id="btnResetData" style="border-color: var(--rose-dark); color: var(--rose-dark);">
+            <i data-lucide="refresh-ccw"></i>Restaurar dados padrão
+          </button>
+          <p class="help" style="margin-top: var(--space-3); color: var(--muted); font-size: var(--fs-xs);">
+            Restaura todos os pacotes, combos, adicionais e serviços aos valores originais. Não afeta o histórico de pedidos.
+          </p>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- TOAST -->
+  <div class="admin-toast" id="adminToast"></div>
+
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/firebase-config.js"></script>
+  <script src="assets/js/data-store.js"></script>
+  <script src="assets/js/firebase-store.js"></script>
+  <script src="assets/js/admin.js"></script>
+  <script>document.addEventListener('DOMContentLoaded', () => { if (window.lucide) window.lucide.createIcons(); });</script>
+</body>
+</html>

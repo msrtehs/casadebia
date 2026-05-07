@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Localização — Casa de Bia</title>
+  <meta name="description" content="Onde fica a Casa de Bia — Salvador, BA. Mapa interativo, endereço e fotos do espaço.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/main.css">
+  <link rel="stylesheet" href="assets/css/home.css">
+  <link rel="stylesheet" href="assets/css/inner.css">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='50' fill='%23C8445A'/><text x='50' y='62' text-anchor='middle' font-family='Georgia' font-size='42' fill='white' font-weight='700'>CB</text></svg>">
+</head>
+<body class="has-fixed-nav">
+  <div id="site-nav"></div>
+
+  <main>
+    <section class="page-hero">
+      <div class="container">
+        <span class="eyebrow">Onde estamos</span>
+        <h1>Visite a Casa de Bia</h1>
+        <p>Localização privilegiada em Salvador, fácil acesso e estacionamento na região.</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="location-grid">
+          <!-- MAPA -->
+          <div class="map-wrapper reveal">
+            <iframe
+              src="https://www.google.com/maps?q=CEP+40390-455+Salvador+BA&output=embed"
+              loading="lazy"
+              referrerpolicy="no-referrer-when-downgrade"
+              title="Mapa Casa de Bia">
+            </iframe>
+          </div>
+
+          <!-- ENDEREÇO -->
+          <div class="address-card reveal delay-1">
+            <div class="address-row">
+              <div class="address-icon"><i data-lucide="map-pin"></i></div>
+              <div>
+                <h4>Endereço</h4>
+                <p>Salvador, BA — CEP 40390-455</p>
+              </div>
+            </div>
+
+            <div class="address-row">
+              <div class="address-icon"><i data-lucide="clock"></i></div>
+              <div>
+                <h4>Horário de funcionamento</h4>
+                <p>Eventos sob agendamento<br>Atendimento todos os dias</p>
+              </div>
+            </div>
+
+            <div class="address-row">
+              <div class="address-icon"><i data-lucide="phone"></i></div>
+              <div>
+                <h4>Contato</h4>
+                <p>(71) 99965-2027<br>WhatsApp disponível</p>
+              </div>
+            </div>
+
+            <div class="address-row">
+              <div class="address-icon"><i data-lucide="car"></i></div>
+              <div>
+                <h4>Como chegar</h4>
+                <p>Acesso fácil por carro, app de transporte ou ônibus.</p>
+              </div>
+            </div>
+
+            <div class="address-actions">
+              <a href="https://www.google.com/maps/search/?api=1&query=CEP+40390-455+Salvador+BA"
+                 target="_blank" rel="noopener" class="btn btn-primary">
+                <i data-lucide="navigation"></i>Abrir no Google Maps
+              </a>
+              <a href="#" id="loc-whatsapp" class="btn btn-outline">
+                <i data-lucide="message-circle"></i>Tirar dúvidas
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- O ESPAÇO -->
+    <section class="section" style="background: linear-gradient(180deg, var(--bg) 0%, var(--gold-light) 100%);">
+      <div class="container">
+        <div class="section-header reveal">
+          <span class="eyebrow">Conheça o espaço</span>
+          <h2>Estrutura completa para seu evento</h2>
+          <p>Tudo o que você precisa em um só lugar.</p>
+        </div>
+
+        <div class="space-grid">
+          <div class="space-card reveal">
+            <div class="space-card-icon"><i data-lucide="trees"></i></div>
+            <h4>Área aberta coberta</h4>
+            <p>Espaço amplo e arejado, protegido para qualquer clima.</p>
+          </div>
+          <div class="space-card reveal delay-1">
+            <div class="space-card-icon"><i data-lucide="utensils"></i></div>
+            <h4>Cozinha gourmet</h4>
+            <p>Equipada e pronta para receber seu buffet ou cozinheiros.</p>
+          </div>
+          <div class="space-card reveal delay-2">
+            <div class="space-card-icon"><i data-lucide="flame"></i></div>
+            <h4>Fogão industrial</h4>
+            <p>Potência profissional para grandes eventos.</p>
+          </div>
+          <div class="space-card reveal delay-3">
+            <div class="space-card-icon"><i data-lucide="snowflake"></i></div>
+            <h4>Freezers à disposição</h4>
+            <p>Capacidade para bebidas e alimentos do seu evento.</p>
+          </div>
+          <div class="space-card reveal">
+            <div class="space-card-icon"><i data-lucide="users"></i></div>
+            <h4>Capacidade ampla</h4>
+            <p>Conforto para até 100 convidados no pacote Essencial.</p>
+          </div>
+          <div class="space-card reveal delay-1">
+            <div class="space-card-icon"><i data-lucide="sparkles"></i></div>
+            <h4>Decoração disponível</h4>
+            <p>Combos prontos ou monte como preferir.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="site-footer"></div>
+  <div id="site-whatsapp"></div>
+
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/firebase-config.js"></script>
+  <script src="assets/js/data-store.js"></script>
+  <script src="assets/js/firebase-store.js"></script>
+  <script src="assets/js/layout.js"></script>
+  <script src="assets/js/home.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const wa = document.getElementById('loc-whatsapp');
+      if (wa) wa.href = window.waLink('Olá! Gostaria de tirar uma dúvida sobre a localização da Casa de Bia.');
+    });
+  </script>
+</body>
+</html>

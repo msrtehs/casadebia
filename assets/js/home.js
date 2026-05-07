@@ -1,0 +1,69 @@
+/* ============================================
+   CASA DE BIA — Home: carrossel, contadores, reveal
+   ============================================ */
+(function () {
+  document.addEventListener('DOMContentLoaded', () => {
+    // ===== CARROSSEL DO HERO =====
+    const slides = document.querySelectorAll('.hero-slide');
+    const indicators = document.querySelectorAll('.hero-indicator');
+    let current = 0;
+    let timer = null;
+
+    const goTo = (i) => {
+      slides[current]?.classList.remove('active');
+      indicators[current]?.classList.remove('active');
+      current = (i + slides.length) % slides.length;
+      slides[current]?.classList.add('active');
+      indicators[current]?.classList.add('active');
+    };
+
+    const start = () => {
+      stop();
+      timer = setInterval(() => goTo(current + 1), 6000);
+    };
+    const stop = () => { if (timer) { clearInterval(timer); timer = null; } };
+
+    indicators.forEach((el, i) => {
+      el.addEventListener('click', () => { goTo(i); start(); });
+    });
+
+    if (slides.length > 0) {
+      slides[0].classList.add('active');
+      indicators[0]?.classList.add('active');
+      start();
+    }
+
+    // ===== CONTADOR ANIMADO DOS STATS =====
+    const stats = document.querySelectorAll('.stat-num[data-count]');
+    const animateCount = (el) => {
+      const target = parseInt(el.dataset.count, 10);
+      const suffix = el.dataset.suffix || '';
+      const duration = 1800;
+      const start = performance.now();
+      const tick = (now) => {
+        const elapsed = now - start;
+        const progress = Math.min(elapsed / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        el.textContent = Math.floor(target * eased).toLocaleString('pt-BR') + suffix;
+        if (progress < 1) requestAnimationFrame(tick);
+        else el.textContent = target.toLocaleString('pt-BR') + suffix;
+      };
+      requestAnimationFrame(tick);
+    };
+
+    // ===== REVEAL ON SCROLL =====
+    const revealEls = document.querySelectorAll('.reveal');
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          e.target.classList.add('visible');
+          if (e.target.matches('.stat-num[data-count]')) animateCount(e.target);
+          io.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.15, rootMargin: '0px 0px -60px 0px' });
+
+    revealEls.forEach(el => io.observe(el));
+    stats.forEach(el => io.observe(el));
+  });
+})();
