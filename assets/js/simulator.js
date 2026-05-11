@@ -38,10 +38,10 @@
 
     // ===== SHOW STEP =====
     const showStep = (n) => {
-      // Pula etapa 3 (gás) se Premium ou Pro Max (já incluem gás)
+      // Pula etapa 5 (gás) se pacote já inclui gás (Premium/Pro Max)
       const pkgIncludesGas = state.package && window.SIM_PRICING.packages[state.package]?.includesGas;
-      if (n === 3 && pkgIncludesGas) {
-        n = state.currentStep < 3 ? 4 : 2;
+      if (n === 5 && pkgIncludesGas) {
+        n = state.currentStep < 5 ? 6 : 4;
       }
       state.currentStep = Math.max(1, Math.min(n, state.totalSteps));
       window.SIM.save(state);
@@ -73,9 +73,8 @@
     const canAdvance = () => {
       switch (state.currentStep) {
         case 1: return !!state.date;
-        case 2: return state.guests >= 1;
-        case 3: return state.gas === true || state.gas === false;
-        case 4: {
+        case 2: return !!state.package;
+        case 3: {
           if (state.package === 'premium' || state.package === 'promax') return true;
           if (state.decoration?.enabled === false) return true;
           if (state.decoration?.enabled === true) {
@@ -83,8 +82,9 @@
           }
           return false;
         }
-        case 5: return true; // Serviços são opcionais
-        case 6: return !!state.package;
+        case 4: return state.guests >= 1;
+        case 5: return state.gas === true || state.gas === false;
+        case 6: return true; // Serviços são opcionais
         case 7: {
           const name = (state.customer?.name || '').trim();
           const digits = (state.customer?.whatsapp || '').replace(/\D/g, '');
@@ -167,10 +167,20 @@
     pkgOptions.forEach(opt => {
       opt.addEventListener('click', () => {
         state.package = opt.dataset.pkg;
-        // Reset de gás se mudar pacote
-        if (state.package === 'premium') state.gas = null;
+        // Reset de gás se pacote já inclui gás
+        if (window.SIM_PRICING.packages[state.package]?.includesGas) state.gas = null;
+        // Premium/Pro Max: forçar decoração habilitada
+        if (state.package === 'premium' || state.package === 'promax') {
+          state.decoration = state.decoration || { enabled: null, type: null, combo: null, addons: [], balloon: null };
+          state.decoration.enabled = true;
+        }
         window.SIM.save(state);
         renderPackages();
+        updateGuestUI();
+        renderDecorationYesNo();
+        renderDecorationVisibility();
+        renderBalloons();
+        renderDecorationSummary();
         renderBudget();
       });
     });
@@ -1395,7 +1405,7 @@
         return;
       }
       if (!state.package) {
-        showValidationError('Volte para a Etapa 6 e escolha um pacote.');
+        showValidationError('Volte para a Etapa 2 e escolha um pacote.');
         return;
       }
 
@@ -1443,12 +1453,12 @@
       if (!canAdvance()) {
         const msgs = {
           1: 'Selecione a data do evento.',
-          2: 'Informe o número de convidados.',
-          3: 'Escolha se deseja usar gás.',
-          4: state.decoration?.enabled === true
+          2: 'Selecione um pacote para continuar.',
+          3: state.decoration?.enabled === true
               ? 'Escolha o tipo e um combo de decoração.'
               : 'Indique se deseja decoração.',
-          6: 'Selecione um pacote para continuar.',
+          4: 'Informe o número de convidados.',
+          5: 'Escolha se deseja usar gás.',
           7: 'Preencha seu nome (mín. 3 letras) e um WhatsApp válido.'
         };
         showValidationError(msgs[state.currentStep] || 'Complete a etapa para avançar.');
