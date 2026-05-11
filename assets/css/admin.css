@@ -339,6 +339,27 @@ body.admin-body {
   gap: var(--space-3);
 }
 
+.admin-list-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.admin-tag {
+  display: inline-block;
+  padding: 4px 10px;
+  background: rgba(220, 53, 69, 0.12);
+  color: rgb(180, 40, 55);
+  border-radius: var(--radius-full);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+}
+
 .admin-item {
   background: var(--bg);
   border: 1px solid var(--border);

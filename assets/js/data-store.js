@@ -6,6 +6,7 @@
 (function () {
   const STORAGE_KEY = 'casadebia_admin_data_v2';
   const ORDERS_KEY = 'casadebia_orders_v1';
+  const BLOCKED_DATES_KEY = 'casadebia_blocked_dates_v1';
   // Limpa versão antiga para evitar dados desatualizados durante o desenvolvimento
   try { localStorage.removeItem('casadebia_admin_data_v1'); } catch {}
   const SESSION_KEY = 'casadebia_admin_session';
@@ -18,7 +19,8 @@
     },
     config: {
       whatsappNumber: '5571999652027',
-      gasPrice: 40
+      gasPrice: 40,
+      includedDecorationImage: 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&w=1200&q=80'
     },
     packages: {
       basico:    { id: 'basico',    name: 'Básico',    price: 299.90, capacity: 20,  extraPerGuest: 15, includesGas: false, includesDecoration: false, includesPhotographer: false },
@@ -28,12 +30,12 @@
     },
     decoration: {
       combos: [
-        { id: 'pm-classic',  type: 'pegue-monte', name: 'Combo Clássico', description: 'Painel decorativo, balões coloridos e itens essenciais para você montar como preferir.', items: ['1 painel decorativo 2x2m', '50 balões coloridos', '1 toalha de mesa temática', 'Itens descartáveis para 20 pessoas'], price: 180, image: 'https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=800&q=80' },
-        { id: 'pm-premium',  type: 'pegue-monte', name: 'Combo Premium',  description: 'Estrutura mais completa para festas elaboradas, com painel duplo e arco de balões.',         items: ['Painel duplo decorativo', 'Arco de balões 3m', 'Mesa principal decorada', 'Itens para 50 pessoas'],                  price: 320, image: 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&w=800&q=80' },
-        { id: 'pm-tematico', type: 'pegue-monte', name: 'Combo Temático', description: 'Decoração temática personalizada (princesa, super-heróis, safari e outros temas).',         items: ['Painel temático personalizado', 'Topo de bolo temático', 'Balões e itens do tema', 'Toalha e talheres temáticos'],   price: 280, image: 'https://images.unsplash.com/photo-1464047736614-af63643285bf?auto=format&fit=crop&w=800&q=80' },
-        { id: 'completa-essencial', type: 'completa', name: 'Decoração Essencial',         description: 'Decoração completa com montagem, ambientação e finalização inclusas.',                                  items: ['Painel + arco de balões', 'Mesa principal decorada', 'Mesa de doces ambientada', 'Montagem e desmontagem'],                                                       price: 650,  image: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=800&q=80' },
-        { id: 'completa-luxo',      type: 'completa', name: 'Decoração Luxo',              description: 'Decoração sofisticada com floral natural, iluminação especial e atendimento dedicado.',               items: ['Estrutura cenográfica completa', 'Arranjos florais naturais', 'Iluminação cênica', 'Mesas de doces e bolo profissionais', 'Equipe de montagem dedicada'],     price: 1280, image: 'https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?auto=format&fit=crop&w=800&q=80' },
-        { id: 'completa-infantil',  type: 'completa', name: 'Decoração Infantil Completa', description: 'Para festas infantis com todos os elementos pensados para encantar as crianças.',                       items: ['Painel temático grande', 'Arco de balões duplo', 'Mesa de doces ambientada', 'Cenários para fotos', 'Itens lúdicos espalhados'],                                price: 890,  image: 'https://images.unsplash.com/photo-1543872084-c7bd3822856f?auto=format&fit=crop&w=800&q=80' }
+        { id: 'pm-classic',  type: 'pegue-monte', category: 'Clássico',  name: 'Combo Clássico', description: 'Painel decorativo, balões coloridos e itens essenciais para você montar como preferir.', items: ['1 painel decorativo 2x2m', '50 balões coloridos', '1 toalha de mesa temática', 'Itens descartáveis para 20 pessoas'], price: 180, images: ['https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=1200&q=80'] },
+        { id: 'pm-premium',  type: 'pegue-monte', category: 'Premium',   name: 'Combo Premium',  description: 'Estrutura mais completa para festas elaboradas, com painel duplo e arco de balões.',         items: ['Painel duplo decorativo', 'Arco de balões 3m', 'Mesa principal decorada', 'Itens para 50 pessoas'],                  price: 320, images: ['https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&w=1200&q=80'] },
+        { id: 'pm-tematico', type: 'pegue-monte', category: 'Temático',  name: 'Combo Temático', description: 'Decoração temática personalizada (princesa, super-heróis, safari e outros temas).',         items: ['Painel temático personalizado', 'Topo de bolo temático', 'Balões e itens do tema', 'Toalha e talheres temáticos'],   price: 280, images: ['https://images.unsplash.com/photo-1464047736614-af63643285bf?auto=format&fit=crop&w=1200&q=80'] },
+        { id: 'completa-essencial', type: 'completa', category: 'Essencial', name: 'Decoração Essencial',         description: 'Decoração completa com montagem, ambientação e finalização inclusas.',                                  items: ['Painel + arco de balões', 'Mesa principal decorada', 'Mesa de doces ambientada', 'Montagem e desmontagem'],                                                       price: 650,  images: ['https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=1200&q=80'] },
+        { id: 'completa-luxo',      type: 'completa', category: 'Luxo',      name: 'Decoração Luxo',              description: 'Decoração sofisticada com floral natural, iluminação especial e atendimento dedicado.',               items: ['Estrutura cenográfica completa', 'Arranjos florais naturais', 'Iluminação cênica', 'Mesas de doces e bolo profissionais', 'Equipe de montagem dedicada'],     price: 1280, images: ['https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?auto=format&fit=crop&w=1200&q=80'] },
+        { id: 'completa-infantil',  type: 'completa', category: 'Infantil',  name: 'Decoração Infantil Completa', description: 'Para festas infantis com todos os elementos pensados para encantar as crianças.',                       items: ['Painel temático grande', 'Arco de balões duplo', 'Mesa de doces ambientada', 'Cenários para fotos', 'Itens lúdicos espalhados'],                                price: 890,  images: ['https://images.unsplash.com/photo-1543872084-c7bd3822856f?auto=format&fit=crop&w=1200&q=80'] }
       ],
       addons: [
         { id: 'led-letras',     name: 'Letreiro LED personalizado',  description: 'Nome ou mensagem em LED',           price: 120 },
@@ -44,6 +46,44 @@
         { id: 'mesa-bolo',      name: 'Mesa de bolo decorada extra', description: 'Mesa adicional para bolo principal',price: 150 }
       ]
     },
+    balloons: [
+      {
+        id: 'bal-classico',
+        name: 'Arco Clássico',
+        shortDesc: 'Arco de balões coloridos com cores à sua escolha (até 3 cores).',
+        description: 'Um arco de balões clássico, perfeito para qualquer tipo de evento. Montado com balões de alta qualidade em até 3 cores escolhidas pelo cliente. Estrutura segura, presa com balões metálicos para dar destaque ao painel principal. Ideal para entradas, mesa do bolo ou área de fotos.',
+        price: 220,
+        images: [
+          'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&w=1200&q=80',
+          'https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?auto=format&fit=crop&w=1200&q=80',
+          'https://images.unsplash.com/photo-1543872084-c7bd3822856f?auto=format&fit=crop&w=1200&q=80'
+        ]
+      },
+      {
+        id: 'bal-organico',
+        name: 'Arco Orgânico',
+        shortDesc: 'Estilo moderno em formato orgânico — o queridinho das festas.',
+        description: 'Modelo orgânico em formato natural e assimétrico, com mistura de balões de tamanhos variados. Acabamento sofisticado, com toques metálicos e folhagens. Cada arco é único e composto na hora, garantindo um visual exclusivo para o seu evento. Perfeito para decorações modernas e instagramáveis.',
+        price: 380,
+        images: [
+          'https://images.unsplash.com/photo-1464047736614-af63643285bf?auto=format&fit=crop&w=1200&q=80',
+          'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=1200&q=80',
+          'https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=1200&q=80'
+        ]
+      },
+      {
+        id: 'bal-tematico',
+        name: 'Painel + Arco Temático',
+        shortDesc: 'Combinação completa: painel decorativo + arco de balões temático.',
+        description: 'Pacote completo com painel decorativo de 2x2m + arco orgânico de balões, tudo no tema escolhido pelo cliente (princesa, super-heróis, safari, futebol, e outros). Inclui montagem e desmontagem no local, com tempo de duração mínimo garantido durante todo o evento. Ideal para festas infantis e celebrações temáticas.',
+        price: 560,
+        images: [
+          'https://images.unsplash.com/photo-1558636508-e0db3814bd1d?auto=format&fit=crop&w=1200&q=80',
+          'https://images.unsplash.com/photo-1607344645866-009c320b63e0?auto=format&fit=crop&w=1200&q=80',
+          'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&w=1200&q=80'
+        ]
+      }
+    ],
     services: {
       animadora:     { id: 'animadora',     name: 'Animadora Infantil', icon: 'party-popper',     desc: 'Recreação, pintura facial, balões e mais. Marque os serviços desejados.', mode: 'multi-checkbox', items: [
         { id: 'recreacao',      name: 'Recreação / Animação', price: 200 },
@@ -92,7 +132,8 @@
         config: Object.assign({}, DEFAULTS.config, parsed.config || {}),
         auth: Object.assign({}, DEFAULTS.auth, parsed.auth || {}),
         // Pacotes: preserva edições, mas adiciona pacotes novos do default
-        packages: Object.assign({}, DEFAULTS.packages, parsed.packages || {})
+        packages: Object.assign({}, DEFAULTS.packages, parsed.packages || {}),
+        balloons: parsed.balloons || clone(DEFAULTS.balloons)
       });
       // Para cada pacote existente, garante todas as chaves novas (ex: includesPhotographer)
       Object.keys(merged.packages).forEach(k => {
@@ -123,10 +164,40 @@
       gas: data.config.gasPrice
     };
     window.DECORATION_DATA = data.decoration;
+    window.BALLOONS_DATA = data.balloons || [];
     // Adapter: services com items precisam de unit/etc para compatibilidade
     window.SERVICES_DATA = data.services;
     if (window.CASA_CONFIG) {
       window.CASA_CONFIG.whatsapp.number = data.config.whatsappNumber;
+    }
+    syncDisplayPrices(data);
+  };
+
+  // Atualiza valores exibidos visualmente em qualquer página (home, simulador, etc.)
+  const syncDisplayPrices = (data) => {
+    const gas = data?.config?.gasPrice ?? 0;
+    const fmt = (n) => {
+      const num = Number(n) || 0;
+      const hasCents = Math.abs(num - Math.round(num)) > 0.001;
+      return 'R$ ' + num.toLocaleString('pt-BR', {
+        minimumFractionDigits: hasCents ? 2 : 0,
+        maximumFractionDigits: 2
+      });
+    };
+    const apply = () => {
+      document.querySelectorAll('[data-gas-price]').forEach(el => el.textContent = fmt(gas));
+      document.querySelectorAll('[data-gas-plus]').forEach(el => el.textContent = '+' + fmt(gas));
+      document.querySelectorAll('[data-gas-plus-pretty]').forEach(el => el.textContent = '+ ' + fmt(gas));
+      const decoImg = data?.config?.includedDecorationImage;
+      if (decoImg) {
+        const el = document.getElementById('decoDefaultImg');
+        if (el) el.src = decoImg;
+      }
+    };
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', apply, { once: true });
+    } else {
+      apply();
     }
   };
 
@@ -165,6 +236,47 @@
     localStorage.removeItem(ORDERS_KEY);
   };
 
+  // ===== BLOQUEIOS MANUAIS DE DATAS =====
+  const loadBlockedDates = () => {
+    try {
+      const raw = localStorage.getItem(BLOCKED_DATES_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch { return []; }
+  };
+
+  const addBlockedDate = (date, reason = '') => {
+    try {
+      const list = loadBlockedDates();
+      if (list.some(b => b.date === date)) return false;
+      list.push({ date, reason, createdAt: new Date().toISOString() });
+      list.sort((a, b) => a.date.localeCompare(b.date));
+      localStorage.setItem(BLOCKED_DATES_KEY, JSON.stringify(list));
+      return true;
+    } catch { return false; }
+  };
+
+  const removeBlockedDate = (date) => {
+    try {
+      const list = loadBlockedDates().filter(b => b.date !== date);
+      localStorage.setItem(BLOCKED_DATES_KEY, JSON.stringify(list));
+      return true;
+    } catch { return false; }
+  };
+
+  // Retorna mapa { 'YYYY-MM-DD': { status: 'occupied'|'blocked', info: string } }
+  const getDateAvailability = () => {
+    const map = {};
+    loadOrders().forEach(o => {
+      if (o.eventDate) {
+        map[o.eventDate] = { status: 'occupied', info: o.customerName || 'Evento reservado' };
+      }
+    });
+    loadBlockedDates().forEach(b => {
+      if (!map[b.date]) map[b.date] = { status: 'blocked', info: b.reason || 'Indisponível' };
+    });
+    return map;
+  };
+
   // ===== AUTENTICAÇÃO (sessão local — Firebase Auth substitui na 8b) =====
   const isLoggedIn = () => {
     try { return sessionStorage.getItem(SESSION_KEY) === 'authenticated'; }
@@ -198,6 +310,10 @@
     saveOrder,
     deleteOrder,
     clearOrders,
+    loadBlockedDates,
+    addBlockedDate,
+    removeBlockedDate,
+    getDateAvailability,
     isLoggedIn,
     login,
     logout,

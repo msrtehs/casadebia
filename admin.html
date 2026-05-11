@@ -34,8 +34,14 @@
       <a class="admin-nav-link" data-section="decoracao">
         <i data-lucide="palette"></i>Decoração
       </a>
+      <a class="admin-nav-link" data-section="baloes">
+        <i data-lucide="circle"></i>Balões
+      </a>
       <a class="admin-nav-link" data-section="servicos">
         <i data-lucide="sparkles"></i>Serviços
+      </a>
+      <a class="admin-nav-link" data-section="agenda">
+        <i data-lucide="calendar"></i>Agenda
       </a>
       <a class="admin-nav-link" data-section="historico">
         <i data-lucide="receipt"></i>Histórico
@@ -160,6 +166,22 @@
         </div>
       </section>
 
+      <!-- BALÕES -->
+      <section class="admin-section" id="section-baloes">
+        <div class="admin-page-header">
+          <div>
+            <h1>Balões Personalizados</h1>
+            <p>Modelos exibidos na Etapa 4 do simulador. Edite fotos, descrição e valor.</p>
+          </div>
+          <div class="admin-page-actions">
+            <button class="btn btn-primary btn-sm" id="btnAddBalloon">
+              <i data-lucide="plus"></i>Novo modelo
+            </button>
+          </div>
+        </div>
+        <div class="admin-list" id="baloesRoot"></div>
+      </section>
+
       <!-- SERVIÇOS -->
       <section class="admin-section" id="section-servicos">
         <div class="admin-page-header">
@@ -169,6 +191,58 @@
           </div>
         </div>
         <div id="servicosRoot"></div>
+      </section>
+
+      <!-- AGENDA -->
+      <section class="admin-section" id="section-agenda">
+        <div class="admin-page-header">
+          <div>
+            <h1>Agenda</h1>
+            <p>Visualize datas ocupadas e gerencie bloqueios manuais que aparecem no simulador.</p>
+          </div>
+        </div>
+
+        <div class="admin-card">
+          <div class="admin-card-header">
+            <div>
+              <h2>Bloquear nova data</h2>
+              <p>Marque datas indisponíveis (manutenção, evento privado, folga).</p>
+            </div>
+          </div>
+          <div class="admin-grid cols-2">
+            <div class="admin-field">
+              <label>Data a bloquear</label>
+              <input type="date" id="blockDateInput">
+            </div>
+            <div class="admin-field">
+              <label>Motivo <small>(opcional)</small></label>
+              <input type="text" id="blockReasonInput" placeholder="Ex: Manutenção, evento particular">
+            </div>
+          </div>
+          <button class="btn btn-primary" id="btnAddBlockedDate" style="margin-top: var(--space-3);">
+            <i data-lucide="lock"></i>Bloquear data
+          </button>
+        </div>
+
+        <div class="admin-card">
+          <div class="admin-card-header">
+            <div>
+              <h2>Datas ocupadas</h2>
+              <p>Vindas dos pedidos enviados pelo simulador.</p>
+            </div>
+          </div>
+          <div id="occupiedDatesRoot"></div>
+        </div>
+
+        <div class="admin-card">
+          <div class="admin-card-header">
+            <div>
+              <h2>Bloqueios manuais</h2>
+              <p>Datas que você bloqueou manualmente.</p>
+            </div>
+          </div>
+          <div id="blockedDatesRoot"></div>
+        </div>
       </section>
 
       <!-- HISTÓRICO -->
@@ -215,6 +289,10 @@
                 <span class="prefix">R$</span>
                 <input type="number" min="0" id="cfgGas">
               </div>
+            </div>
+            <div class="admin-field" style="grid-column: 1 / -1;">
+              <label>Foto da decoração inclusa <small>(URL — exibida para Premium e Pro Max na Etapa 4)</small></label>
+              <input type="url" id="cfgIncludedDecorationImage" placeholder="https://...">
             </div>
           </div>
         </div>

@@ -50,9 +50,11 @@
     dashboard: renderDashboard,
     pacotes: renderPacotes,
     decoracao: renderDecoracao,
+    baloes: renderBaloes,
     servicos: renderServicos,
     config: renderConfig,
-    historico: renderHistorico
+    historico: renderHistorico,
+    agenda: renderAgenda
   };
 
   $$('.admin-nav-link[data-section]').forEach(link => {
@@ -212,13 +214,18 @@
                 </div>
               </div>
               <div class="admin-field">
-                <label>Imagem (URL)</label>
-                <input data-combo-field="image" data-idx="${idx}" value="${escapeAttr(c.image || '')}">
+                <label>Categoria <small>(ex: Clássico, Premium, Temático)</small></label>
+                <input data-combo-field="category" data-idx="${idx}" value="${escapeAttr(c.category || '')}">
               </div>
             </div>
             <div class="admin-field" style="margin-top: var(--space-4);">
               <label>Descrição</label>
-              <textarea data-combo-field="description" data-idx="${idx}">${escapeAttr(c.description)}</textarea>
+              <textarea data-combo-field="description" data-idx="${idx}" rows="4">${escapeAttr(c.description)}</textarea>
+            </div>
+            <div class="admin-field" style="margin-top: var(--space-4);">
+              <label>Imagens <small>(uma URL por linha — a primeira é a capa)</small></label>
+              <textarea data-combo-field="images" data-idx="${idx}" rows="${Math.max(3, ((c.images || (c.image ? [c.image] : [])).length) + 1)}">${(c.images || (c.image ? [c.image] : [])).map(u => escapeAttr(u)).join('\n')}</textarea>
+              <span class="help">${(c.images || (c.image ? [c.image] : [])).length} imagem(ns) cadastrada(s).</span>
             </div>
             <div class="admin-field" style="margin-top: var(--space-4);">
               <label>Itens inclusos</label>
@@ -246,11 +253,15 @@
       inp.addEventListener('change', () => {
         const idx = +inp.dataset.idx;
         const f = inp.dataset.comboField;
-        const v = inp.type === 'number' ? Number(inp.value) : inp.value;
+        let v;
+        if (f === 'images') {
+          v = (inp.value || '').split('\n').map(s => s.trim()).filter(Boolean);
+        } else {
+          v = inp.type === 'number' ? Number(inp.value) : inp.value;
+        }
         data.decoration.combos[idx][f] = v;
         persist();
-        if (f === 'name' || f === 'price' || f === 'type' || f === 'image' || f === 'description') {
-          // Re-render card (mantém o item aberto)
+        if (f === 'name' || f === 'price' || f === 'type' || f === 'images' || f === 'category' || f === 'description') {
           const wasOpen = root.querySelector(`[data-combo-idx="${idx}"]`)?.classList.contains('open');
           renderCombos();
           if (wasOpen) root.querySelector(`[data-combo-idx="${idx}"]`)?.classList.add('open');
@@ -382,8 +393,8 @@
   $('#btnAddCombo')?.addEventListener('click', () => {
     const id = 'combo-' + Date.now();
     data.decoration.combos.push({
-      id, type: 'pegue-monte', name: 'Novo combo', description: 'Descrição do combo',
-      items: ['Item 1'], price: 100, image: ''
+      id, type: 'pegue-monte', category: '', name: 'Novo combo', description: 'Descrição do combo',
+      items: ['Item 1'], price: 100, images: []
     });
     persist();
     renderCombos();
@@ -685,6 +696,7 @@
   function renderConfig() {
     $('#cfgWhatsapp').value = data.config.whatsappNumber;
     $('#cfgGas').value = data.config.gasPrice;
+    if ($('#cfgIncludedDecorationImage')) $('#cfgIncludedDecorationImage').value = data.config.includedDecorationImage || '';
   }
   $('#cfgWhatsapp')?.addEventListener('change', (e) => {
     data.config.whatsappNumber = e.target.value.replace(/\D/g, '');
@@ -692,6 +704,10 @@
   });
   $('#cfgGas')?.addEventListener('change', (e) => {
     data.config.gasPrice = Number(e.target.value);
+    persist();
+  });
+  $('#cfgIncludedDecorationImage')?.addEventListener('change', (e) => {
+    data.config.includedDecorationImage = e.target.value.trim();
     persist();
   });
   $('#btnChangePassword')?.addEventListener('click', () => {
@@ -795,6 +811,186 @@
     if (d.length === 10) return `(${d.slice(0,2)}) ${d.slice(2,6)}-${d.slice(6)}`;
     return d;
   }
+
+  // ===== BALÕES =====
+  function renderBaloes() {
+    const root = $('#baloesRoot');
+    if (!root) return;
+    data.balloons = data.balloons || [];
+
+    if (!data.balloons.length) {
+      root.innerHTML = `<div class="admin-empty"><i data-lucide="image-off"></i><p>Nenhum modelo cadastrado. Clique em "Novo modelo".</p></div>`;
+      if (window.lucide) window.lucide.createIcons();
+      return;
+    }
+
+    root.innerHTML = data.balloons.map((b, idx) => {
+      const imgs = b.images || [];
+      return `
+      <div class="admin-card" data-bal-idx="${idx}">
+        <div class="admin-card-header">
+          <div>
+            <h3>${escapeHTML(b.name)}</h3>
+            <p>ID: <code>${escapeHTML(b.id)}</code></p>
+          </div>
+          <button class="btn btn-outline btn-sm" data-bal-delete="${idx}">
+            <i data-lucide="trash-2"></i>Excluir
+          </button>
+        </div>
+        <div class="admin-grid cols-2">
+          <div class="admin-field">
+            <label>Título</label>
+            <input type="text" data-bal-field="name" value="${escapeHTML(b.name)}">
+          </div>
+          <div class="admin-field">
+            <label>Preço</label>
+            <div class="admin-field-prefix">
+              <span class="prefix">R$</span>
+              <input type="number" min="0" data-bal-field="price" value="${b.price}">
+            </div>
+          </div>
+        </div>
+        <div class="admin-field">
+          <label>Descrição curta <small>(exibida no card)</small></label>
+          <input type="text" data-bal-field="shortDesc" value="${escapeHTML(b.shortDesc || '')}">
+        </div>
+        <div class="admin-field">
+          <label>Descrição completa <small>(exibida no modal de detalhes)</small></label>
+          <textarea data-bal-field="description" rows="5">${escapeHTML(b.description || '')}</textarea>
+        </div>
+        <div class="admin-field">
+          <label>Imagens <small>(uma URL por linha — a primeira é a capa)</small></label>
+          <textarea data-bal-field="images" rows="${Math.max(3, imgs.length + 1)}">${imgs.map(u => escapeHTML(u)).join('\n')}</textarea>
+          <span class="help">${imgs.length} imagem${imgs.length === 1 ? '' : 's'} cadastrada${imgs.length === 1 ? '' : 's'}.</span>
+        </div>
+      </div>
+      `;
+    }).join('');
+
+    // Listeners
+    root.querySelectorAll('[data-bal-field]').forEach(inp => {
+      inp.addEventListener('change', () => {
+        const card = inp.closest('[data-bal-idx]');
+        const idx = parseInt(card.dataset.balIdx, 10);
+        const field = inp.dataset.balField;
+        const bal = data.balloons[idx];
+        if (!bal) return;
+        if (field === 'price') bal.price = parseFloat(inp.value) || 0;
+        else if (field === 'images') bal.images = (inp.value || '').split('\n').map(s => s.trim()).filter(Boolean);
+        else bal[field] = inp.value;
+        persist();
+        // Re-render só se images mudou (para atualizar contador)
+        if (field === 'images') renderBaloes();
+      });
+    });
+
+    root.querySelectorAll('[data-bal-delete]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const idx = parseInt(btn.dataset.balDelete, 10);
+        const bal = data.balloons[idx];
+        if (!bal) return;
+        if (confirm(`Excluir o modelo "${bal.name}"?`)) {
+          data.balloons.splice(idx, 1);
+          persist();
+          renderBaloes();
+        }
+      });
+    });
+
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  $('#btnAddBalloon')?.addEventListener('click', () => {
+    data.balloons = data.balloons || [];
+    const id = 'bal-' + Date.now().toString(36);
+    data.balloons.push({
+      id,
+      name: 'Novo modelo',
+      shortDesc: '',
+      description: '',
+      price: 0,
+      images: []
+    });
+    persist();
+    renderBaloes();
+  });
+
+  // ===== AGENDA =====
+  function renderAgenda() {
+    const orders = window.DataStore.loadOrders();
+    const blocked = window.DataStore.loadBlockedDates();
+
+    const todayIso = new Date().toISOString().slice(0, 10);
+    const formatDatePT = (iso) => {
+      if (!iso) return '';
+      const [y, m, d] = iso.split('-').map(Number);
+      const months = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+      return `${String(d).padStart(2,'0')} ${months[m-1]} ${y}`;
+    };
+
+    // Datas ocupadas (a partir de pedidos)
+    const occRoot = $('#occupiedDatesRoot');
+    const upcomingOrders = orders.filter(o => o.eventDate && o.eventDate >= todayIso)
+      .sort((a, b) => a.eventDate.localeCompare(b.eventDate));
+    if (!upcomingOrders.length) {
+      occRoot.innerHTML = `<div class="admin-empty"><i data-lucide="calendar-x"></i><p>Nenhuma data ocupada futura.</p></div>`;
+    } else {
+      occRoot.innerHTML = '<div class="admin-list">' + upcomingOrders.map(o => `
+        <div class="admin-list-item">
+          <div>
+            <strong>${formatDatePT(o.eventDate)}</strong>
+            <p style="margin:4px 0 0; color:var(--muted); font-size:var(--fs-sm);">${escapeHTML(o.customerName || '')} ${o.customerWhatsapp ? '· ' + formatWhatsappDisplay(o.customerWhatsapp) : ''}</p>
+          </div>
+          <span class="admin-tag">Ocupada</span>
+        </div>
+      `).join('') + '</div>';
+    }
+
+    // Bloqueios manuais
+    const blkRoot = $('#blockedDatesRoot');
+    const upcomingBlocked = blocked.filter(b => b.date >= todayIso)
+      .sort((a, b) => a.date.localeCompare(b.date));
+    if (!upcomingBlocked.length) {
+      blkRoot.innerHTML = `<div class="admin-empty"><i data-lucide="unlock"></i><p>Nenhum bloqueio manual ativo.</p></div>`;
+    } else {
+      blkRoot.innerHTML = '<div class="admin-list">' + upcomingBlocked.map(b => `
+        <div class="admin-list-item">
+          <div>
+            <strong>${formatDatePT(b.date)}</strong>
+            ${b.reason ? `<p style="margin:4px 0 0; color:var(--muted); font-size:var(--fs-sm);">${escapeHTML(b.reason)}</p>` : ''}
+          </div>
+          <button class="btn btn-outline btn-sm" data-unblock="${b.date}">
+            <i data-lucide="trash-2"></i>Remover
+          </button>
+        </div>
+      `).join('') + '</div>';
+
+      blkRoot.querySelectorAll('[data-unblock]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          if (confirm('Remover este bloqueio?')) {
+            window.DataStore.removeBlockedDate(btn.dataset.unblock);
+            toast('Bloqueio removido');
+            renderAgenda();
+          }
+        });
+      });
+    }
+
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  $('#btnAddBlockedDate')?.addEventListener('click', () => {
+    const dateInp = $('#blockDateInput');
+    const reasonInp = $('#blockReasonInput');
+    const date = dateInp?.value;
+    if (!date) { toast('Selecione uma data', 'error'); return; }
+    const ok = window.DataStore.addBlockedDate(date, reasonInp?.value?.trim() || '');
+    if (!ok) { toast('Esta data já está bloqueada', 'error'); return; }
+    if (dateInp) dateInp.value = '';
+    if (reasonInp) reasonInp.value = '';
+    toast('Data bloqueada');
+    renderAgenda();
+  });
 
   // ===== INIT =====
   // Aviso de senha padrão

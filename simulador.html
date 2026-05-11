@@ -40,12 +40,203 @@
         <!-- ETAPAS -->
         <div class="sim-steps">
 
-          <!-- ===== ETAPA 1: PACOTE ===== -->
+          <!-- ===== ETAPA 1: DATA DO EVENTO ===== -->
           <section class="sim-step" data-step="1">
             <header class="sim-step-header">
               <span class="sim-step-eyebrow">Etapa 1</span>
+              <h2 class="sim-step-title">Escolha a data do evento</h2>
+              <p class="sim-step-desc">Selecione a data no calendário. Datas ocupadas ou bloqueadas não estão disponíveis.</p>
+            </header>
+
+            <div class="cal-wrap">
+              <div class="cal-head">
+                <button class="cal-nav" id="calPrev" type="button" aria-label="Mês anterior">
+                  <i data-lucide="chevron-left"></i>
+                </button>
+                <div class="cal-title" id="calMonthLabel">—</div>
+                <button class="cal-nav" id="calNext" type="button" aria-label="Próximo mês">
+                  <i data-lucide="chevron-right"></i>
+                </button>
+              </div>
+              <div class="cal-grid" id="calGrid"></div>
+              <div class="cal-legend">
+                <span class="cal-legend-item"><span class="cal-legend-dot available"></span>Disponível</span>
+                <span class="cal-legend-item"><span class="cal-legend-dot occupied"></span>Ocupada</span>
+                <span class="cal-legend-item"><span class="cal-legend-dot blocked"></span>Bloqueada</span>
+              </div>
+              <div class="cal-selected-date" id="calSelected" style="display:none;"></div>
+            </div>
+          </section>
+
+          <!-- ===== ETAPA 2: CONVIDADOS ===== -->
+          <section class="sim-step" data-step="2">
+            <header class="sim-step-header">
+              <span class="sim-step-eyebrow">Etapa 2</span>
+              <h2 class="sim-step-title">Quantos convidados?</h2>
+              <p class="sim-step-desc">Informe o número aproximado de pessoas. Para o Básico, cobramos R$ 15 por convidado acima de 20.</p>
+            </header>
+
+            <div class="sim-counter">
+              <button class="sim-counter-btn" id="guestMinus" type="button" aria-label="Diminuir">−</button>
+              <input type="number" id="guestInput" class="sim-counter-input" min="0" max="500" value="0" aria-label="Número de convidados">
+              <button class="sim-counter-btn" id="guestPlus" type="button" aria-label="Aumentar">+</button>
+            </div>
+
+            <div class="sim-info-bar" id="guestInfo" style="display:none;"></div>
+          </section>
+
+          <!-- ===== ETAPA 3: GÁS ===== -->
+          <section class="sim-step" data-step="3">
+            <header class="sim-step-header">
+              <span class="sim-step-eyebrow">Etapa 3</span>
+              <h2 class="sim-step-title">Vai usar gás?</h2>
+              <p class="sim-step-desc">Caso pretenda cozinhar no fogão durante o evento, há uma taxa adicional de <span data-gas-price>R$ 40</span>.</p>
+            </header>
+
+            <div class="sim-yesno">
+              <button class="sim-yesno-option" data-gas="true" type="button">
+                <div class="icon-wrap"><i data-lucide="flame"></i></div>
+                <h4>Sim, vou usar</h4>
+                <p><span data-gas-plus>+R$ 40</span> ao orçamento</p>
+              </button>
+              <button class="sim-yesno-option" data-gas="false" type="button">
+                <div class="icon-wrap"><i data-lucide="x"></i></div>
+                <h4>Não preciso</h4>
+                <p>Sem custo adicional</p>
+              </button>
+            </div>
+
+            <div class="sim-info-bar" style="margin-top: var(--space-5);">
+              <i data-lucide="info"></i>
+              <span>O pacote <strong>Premium</strong> já inclui o gás — esta etapa será pulada automaticamente.</span>
+            </div>
+          </section>
+
+          <!-- ===== ETAPA 4: DECORAÇÃO ===== -->
+          <section class="sim-step" data-step="4">
+            <header class="sim-step-header">
+              <span class="sim-step-eyebrow">Etapa 4</span>
+              <h2 class="sim-step-title">Decoração</h2>
+              <p class="sim-step-desc">Você pode escolher um combo pronto, montar pegue e monte ou seguir sem decoração.</p>
+            </header>
+
+            <!-- Aviso para Premium/Pro Max (já incluem decoração) -->
+            <div class="deco-included-box" id="decoIncludedNote" style="display:none;">
+              <div class="deco-included-text" id="decoIncludedText">
+                O pacote escolhido já tem direito a uma decoração inclusa, modelo <strong>"pegue e monte"</strong>, com um kit básico.
+                Caso queira melhorar sua decoração, personalize e adicione elementos para tornar seu evento ainda mais inesquecível.
+              </div>
+              <div class="deco-included-photo">
+                <img id="decoDefaultImg" src="https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&w=1200&q=80" alt="Decoração padrão inclusa">
+                <span class="deco-included-tag">Decoração inclusa no pacote</span>
+              </div>
+            </div>
+
+            <!-- Pergunta inicial: deseja decoração? -->
+            <div id="decoQuestion">
+              <div class="sim-yesno">
+                <button class="sim-yesno-option" data-deco="true" type="button">
+                  <div class="icon-wrap"><i data-lucide="palette"></i></div>
+                  <h4>Sim, quero decoração</h4>
+                  <p>Escolher combo e adicionais</p>
+                </button>
+                <button class="sim-yesno-option" data-deco="false" type="button">
+                  <div class="icon-wrap"><i data-lucide="x"></i></div>
+                  <h4>Não, sem decoração</h4>
+                  <p>Seguir sem este item</p>
+                </button>
+              </div>
+            </div>
+
+            <!-- Módulo de decoração (aparece se "Sim") -->
+            <div id="decoModule" style="display:none;">
+
+              <!-- 4.1 Tipo de decoração -->
+              <div class="deco-section" id="decoTypeSection" style="display:none;">
+                <div class="deco-section-title">
+                  <span class="deco-section-num">1</span>
+                  <div>
+                    <h3>Qual tipo de decoração?</h3>
+                    <small>Escolha entre Pegue e Monte (você monta) ou Decoração Completa (entregamos pronto).</small>
+                  </div>
+                </div>
+                <div class="deco-types">
+                  <button class="sim-yesno-option" data-deco-type="pegue-monte" type="button">
+                    <div class="icon-wrap"><i data-lucide="package"></i></div>
+                    <h4>Pegue e Monte</h4>
+                    <p>Você recebe os itens e monta</p>
+                  </button>
+                  <button class="sim-yesno-option" data-deco-type="completa" type="button">
+                    <div class="icon-wrap"><i data-lucide="sparkles"></i></div>
+                    <h4>Decoração Montada</h4>
+                    <p>Entregamos tudo pronto</p>
+                  </button>
+                </div>
+              </div>
+
+              <!-- 4.2 Combos -->
+              <div class="deco-section" id="decoCombosSection" style="display:none;">
+                <div class="deco-section-title">
+                  <span class="deco-section-num">2</span>
+                  <div>
+                    <h3>Personalize ou altere seu modelo de decoração</h3>
+                    <small>Selecione o combo que mais combina com seu evento.</small>
+                  </div>
+                </div>
+                <div class="deco-combos" id="decoCombos"></div>
+              </div>
+
+              <!-- 4.3 Balões personalizados -->
+              <div class="deco-section" id="decoBalloonsSection" style="display:none;">
+                <div class="deco-section-title">
+                  <span class="deco-section-num">3</span>
+                  <div>
+                    <h3>Festa sem balões? Nem pensar!</h3>
+                    <small>Eleve sua decoração para outro nível com balões personalizados.</small>
+                  </div>
+                </div>
+                <div class="balloon-grid" id="decoBalloons"></div>
+              </div>
+
+              <!-- 4.4 Adicionais -->
+              <div class="deco-section" id="decoAddonsSection" style="display:none;">
+                <div class="deco-section-title">
+                  <span class="deco-section-num">4</span>
+                  <div>
+                    <h3>Adicionais (opcional)</h3>
+                    <small>Marque os extras que deseja incluir. Você pode escolher quantos quiser.</small>
+                  </div>
+                </div>
+                <div class="deco-addons" id="decoAddons"></div>
+              </div>
+
+              <!-- Resumo -->
+              <div class="deco-summary" id="decoSummary" style="display:none;"></div>
+            </div>
+          </section>
+
+          <!-- ===== ETAPA 5: SERVIÇOS ADICIONAIS ===== -->
+          <section class="sim-step" data-step="5">
+            <header class="sim-step-header">
+              <span class="sim-step-eyebrow">Etapa 5</span>
+              <h2 class="sim-step-title">Serviços adicionais</h2>
+              <p class="sim-step-desc">Ative os serviços que deseja contratar. Tudo é opcional — ative só o que precisar.</p>
+            </header>
+
+            <div class="svc-list" id="svcList"></div>
+
+            <div class="svc-skip">
+              <i data-lucide="info" style="width:16px; height:16px; display:inline-block; vertical-align:middle;"></i>
+              Não precisa de serviços extras? <strong>Pode avançar</strong> direto para a próxima etapa.
+            </div>
+          </section>
+
+          <!-- ===== ETAPA 6: PACOTE ===== -->
+          <section class="sim-step" data-step="6">
+            <header class="sim-step-header">
+              <span class="sim-step-eyebrow">Etapa 6</span>
               <h2 class="sim-step-title">Escolha seu pacote</h2>
-              <p class="sim-step-desc">Selecione a opção que melhor encaixa no seu evento. Você poderá personalizar tudo nas próximas etapas.</p>
+              <p class="sim-step-desc">Selecione a opção que melhor encaixa no seu evento.</p>
             </header>
 
             <div class="sim-options">
@@ -100,174 +291,6 @@
                   <li><i data-lucide="check"></i>Equipe de fotografia e filmagem (básico)</li>
                 </ul>
               </button>
-            </div>
-          </section>
-
-          <!-- ===== ETAPA 2: CONVIDADOS ===== -->
-          <section class="sim-step" data-step="2">
-            <header class="sim-step-header">
-              <span class="sim-step-eyebrow">Etapa 2</span>
-              <h2 class="sim-step-title">Quantos convidados?</h2>
-              <p class="sim-step-desc">Informe o número aproximado de pessoas. Para o Básico, cobramos R$ 15 por convidado acima de 20.</p>
-            </header>
-
-            <div class="sim-counter">
-              <button class="sim-counter-btn" id="guestMinus" type="button" aria-label="Diminuir">−</button>
-              <input type="number" id="guestInput" class="sim-counter-input" min="0" max="500" value="0" aria-label="Número de convidados">
-              <button class="sim-counter-btn" id="guestPlus" type="button" aria-label="Aumentar">+</button>
-            </div>
-
-            <div class="sim-info-bar" id="guestInfo" style="display:none;"></div>
-          </section>
-
-          <!-- ===== ETAPA 3: GÁS ===== -->
-          <section class="sim-step" data-step="3">
-            <header class="sim-step-header">
-              <span class="sim-step-eyebrow">Etapa 3</span>
-              <h2 class="sim-step-title">Vai usar gás?</h2>
-              <p class="sim-step-desc">Caso pretenda cozinhar no fogão durante o evento, há uma taxa adicional de R$ 40.</p>
-            </header>
-
-            <div class="sim-yesno">
-              <button class="sim-yesno-option" data-gas="true" type="button">
-                <div class="icon-wrap"><i data-lucide="flame"></i></div>
-                <h4>Sim, vou usar</h4>
-                <p>+R$ 40 ao orçamento</p>
-              </button>
-              <button class="sim-yesno-option" data-gas="false" type="button">
-                <div class="icon-wrap"><i data-lucide="x"></i></div>
-                <h4>Não preciso</h4>
-                <p>Sem custo adicional</p>
-              </button>
-            </div>
-
-            <div class="sim-info-bar" style="margin-top: var(--space-5);">
-              <i data-lucide="info"></i>
-              <span>O pacote <strong>Premium</strong> já inclui o gás — esta etapa será pulada automaticamente.</span>
-            </div>
-          </section>
-
-          <!-- ===== ETAPA 4: DECORAÇÃO ===== -->
-          <section class="sim-step" data-step="4">
-            <header class="sim-step-header">
-              <span class="sim-step-eyebrow">Etapa 4</span>
-              <h2 class="sim-step-title">Decoração</h2>
-              <p class="sim-step-desc">Você pode escolher um combo pronto, montar pegue e monte ou seguir sem decoração.</p>
-            </header>
-
-            <!-- Aviso para Premium/Pro Max (já incluem decoração) -->
-            <div class="sim-info-bar" id="decoIncludedNote" style="display:none;">
-              <i data-lucide="check-circle-2"></i>
-              <span id="decoIncludedText">Seu pacote já inclui decoração. Esta etapa é opcional caso queira adicionar extras.</span>
-            </div>
-
-            <!-- Pergunta inicial: deseja decoração? -->
-            <div id="decoQuestion">
-              <div class="sim-yesno">
-                <button class="sim-yesno-option" data-deco="true" type="button">
-                  <div class="icon-wrap"><i data-lucide="palette"></i></div>
-                  <h4>Sim, quero decoração</h4>
-                  <p>Escolher combo e adicionais</p>
-                </button>
-                <button class="sim-yesno-option" data-deco="false" type="button">
-                  <div class="icon-wrap"><i data-lucide="x"></i></div>
-                  <h4>Não, sem decoração</h4>
-                  <p>Seguir sem este item</p>
-                </button>
-              </div>
-            </div>
-
-            <!-- Módulo de decoração (aparece se "Sim") -->
-            <div id="decoModule" style="display:none;">
-
-              <!-- 4.1 Tipo de decoração -->
-              <div class="deco-section" id="decoTypeSection" style="display:none;">
-                <div class="deco-section-title">
-                  <span class="deco-section-num">1</span>
-                  <div>
-                    <h3>Qual tipo de decoração?</h3>
-                    <small>Escolha entre Pegue e Monte (você monta) ou Decoração Completa (entregamos pronto).</small>
-                  </div>
-                </div>
-                <div class="deco-types">
-                  <button class="sim-yesno-option" data-deco-type="pegue-monte" type="button">
-                    <div class="icon-wrap"><i data-lucide="package"></i></div>
-                    <h4>Pegue e Monte</h4>
-                    <p>Você recebe os itens e monta</p>
-                  </button>
-                  <button class="sim-yesno-option" data-deco-type="completa" type="button">
-                    <div class="icon-wrap"><i data-lucide="sparkles"></i></div>
-                    <h4>Decoração Completa</h4>
-                    <p>Entregamos tudo montado</p>
-                  </button>
-                </div>
-              </div>
-
-              <!-- 4.2 Combos -->
-              <div class="deco-section" id="decoCombosSection" style="display:none;">
-                <div class="deco-section-title">
-                  <span class="deco-section-num">2</span>
-                  <div>
-                    <h3>Escolha um combo</h3>
-                    <small>Selecione o combo que mais combina com seu evento.</small>
-                  </div>
-                </div>
-                <div class="deco-combos" id="decoCombos"></div>
-              </div>
-
-              <!-- 4.3 Adicionais -->
-              <div class="deco-section" id="decoAddonsSection" style="display:none;">
-                <div class="deco-section-title">
-                  <span class="deco-section-num">3</span>
-                  <div>
-                    <h3>Adicionais (opcional)</h3>
-                    <small>Marque os extras que deseja incluir. Você pode escolher quantos quiser.</small>
-                  </div>
-                </div>
-                <div class="deco-addons" id="decoAddons"></div>
-              </div>
-
-              <!-- Resumo -->
-              <div class="deco-summary" id="decoSummary" style="display:none;"></div>
-            </div>
-          </section>
-
-          <!-- ===== ETAPA 5: SERVIÇOS ADICIONAIS ===== -->
-          <section class="sim-step" data-step="5">
-            <header class="sim-step-header">
-              <span class="sim-step-eyebrow">Etapa 5</span>
-              <h2 class="sim-step-title">Serviços adicionais</h2>
-              <p class="sim-step-desc">Ative os serviços que deseja contratar. Tudo é opcional — ative só o que precisar.</p>
-            </header>
-
-            <div class="svc-list" id="svcList"></div>
-
-            <div class="svc-skip">
-              <i data-lucide="info" style="width:16px; height:16px; display:inline-block; vertical-align:middle;"></i>
-              Não precisa de serviços extras? <strong>Pode avançar</strong> direto para a próxima etapa.
-            </div>
-          </section>
-
-          <!-- ===== ETAPA 6: DATA ===== -->
-          <section class="sim-step" data-step="6">
-            <header class="sim-step-header">
-              <span class="sim-step-eyebrow">Etapa 6</span>
-              <h2 class="sim-step-title">Quando vai ser o evento?</h2>
-              <p class="sim-step-desc">Selecione a data no calendário abaixo. Apenas datas futuras estão disponíveis.</p>
-            </header>
-
-            <div class="cal-wrap">
-              <div class="cal-head">
-                <button class="cal-nav" id="calPrev" type="button" aria-label="Mês anterior">
-                  <i data-lucide="chevron-left"></i>
-                </button>
-                <div class="cal-title" id="calMonthLabel">—</div>
-                <button class="cal-nav" id="calNext" type="button" aria-label="Próximo mês">
-                  <i data-lucide="chevron-right"></i>
-                </button>
-              </div>
-              <div class="cal-grid" id="calGrid"></div>
-              <div class="cal-selected-date" id="calSelected" style="display:none;"></div>
             </div>
           </section>
 
@@ -347,6 +370,44 @@
       </div>
     </div>
   </main>
+
+  <!-- ===== MODAL DETALHES (Balões e Decoração) ===== -->
+  <div class="detail-modal" id="detailModal" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="detail-modal-backdrop" data-modal-close></div>
+    <div class="detail-modal-content">
+      <button class="detail-modal-close" type="button" data-modal-close aria-label="Fechar">
+        <i data-lucide="x"></i>
+      </button>
+      <div class="detail-modal-body">
+        <div class="detail-gallery">
+          <div class="detail-gallery-main">
+            <img id="detailMainImg" src="" alt="">
+            <button class="detail-gallery-nav prev" type="button" id="detailPrev" aria-label="Anterior"><i data-lucide="chevron-left"></i></button>
+            <button class="detail-gallery-nav next" type="button" id="detailNext" aria-label="Próxima"><i data-lucide="chevron-right"></i></button>
+            <button class="detail-zoom-btn" type="button" id="detailZoomBtn" aria-label="Ampliar"><i data-lucide="zoom-in"></i></button>
+          </div>
+          <div class="detail-gallery-thumbs" id="detailThumbs"></div>
+        </div>
+        <div class="detail-info">
+          <h2 id="detailTitle">—</h2>
+          <div class="detail-price" id="detailPrice">R$ 0</div>
+          <div class="detail-desc" id="detailDesc"></div>
+          <div class="detail-actions">
+            <button class="btn btn-primary btn-lg" type="button" id="detailChoose">
+              <i data-lucide="check"></i><span>Escolher este modelo</span>
+            </button>
+            <button class="btn btn-outline" type="button" data-modal-close>Voltar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Zoom overlay -->
+    <div class="detail-zoom-overlay" id="detailZoomOverlay" aria-hidden="true">
+      <button class="detail-zoom-close" type="button" id="detailZoomClose" aria-label="Fechar zoom"><i data-lucide="x"></i></button>
+      <img id="detailZoomImg" src="" alt="">
+    </div>
+  </div>
 
   <div id="site-footer"></div>
   <div id="site-whatsapp"></div>

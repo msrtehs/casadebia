@@ -481,7 +481,8 @@
   color: var(--gold);
   margin-bottom: var(--space-4);
 }
-.tst-stars i { width: 18px; height: 18px; fill: currentColor; }
+.tst-stars i,
+.tst-stars svg { width: 18px; height: 18px; fill: currentColor; }
 
 .tst-text {
   color: rgba(255,255,255,0.85);

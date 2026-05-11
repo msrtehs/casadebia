@@ -186,7 +186,7 @@
     package: null,         // 'basico' | 'essencial' | 'premium'
     guests: 0,
     gas: null,             // true | false | null
-    decoration: { enabled: null, type: null, combo: null, addons: [] },
+    decoration: { enabled: null, type: null, combo: null, addons: [], balloon: null },
     services: {},
     date: '',
     customer: { name: '', whatsapp: '' }
@@ -273,6 +273,20 @@
             value: combo.price
           });
           total += combo.price;
+        }
+      }
+
+      // Balão personalizado
+      if (state.decoration.balloon && window.BALLOONS_DATA) {
+        const bal = window.BALLOONS_DATA.find(b => b.id === state.decoration.balloon);
+        if (bal) {
+          items.push({
+            key: 'deco-balloon',
+            label: `Balões: ${bal.name}`,
+            sub: 'Personalizado',
+            value: bal.price
+          });
+          total += bal.price;
         }
       }
 
