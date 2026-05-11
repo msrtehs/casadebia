@@ -38,8 +38,9 @@
 
     // ===== SHOW STEP =====
     const showStep = (n) => {
-      // Pula etapa 3 (gás) se Premium
-      if (n === 3 && state.package === 'premium') {
+      // Pula etapa 3 (gás) se Premium ou Pro Max (já incluem gás)
+      const pkgIncludesGas = state.package && window.SIM_PRICING.packages[state.package]?.includesGas;
+      if (n === 3 && pkgIncludesGas) {
         n = state.currentStep < 3 ? 4 : 2;
       }
       state.currentStep = Math.max(1, Math.min(n, state.totalSteps));
@@ -71,7 +72,7 @@
     // ===== VALIDAÇÃO POR ETAPA =====
     const canAdvance = () => {
       switch (state.currentStep) {
-        case 1: return !!state.package;
+        case 1: return !!state.date;
         case 2: return state.guests >= 1;
         case 3: return state.gas === true || state.gas === false;
         case 4: {
@@ -83,7 +84,7 @@
           return false;
         }
         case 5: return true; // Serviços são opcionais
-        case 6: return !!state.date;
+        case 6: return !!state.package;
         case 7: {
           const name = (state.customer?.name || '').trim();
           const digits = (state.customer?.whatsapp || '').replace(/\D/g, '');
@@ -219,10 +220,20 @@
 
     // ===== ETAPA 3 — GÁS =====
     const gasOptions = document.querySelectorAll('.sim-yesno-option[data-gas]');
+    const renderGasPrice = () => {
+      const price = window.SIM_PRICING?.gas || 0;
+      document.querySelectorAll('[data-gas-price]').forEach(el => {
+        el.textContent = window.SIM.formatBRL(price);
+      });
+      document.querySelectorAll('[data-gas-plus]').forEach(el => {
+        el.textContent = '+' + window.SIM.formatBRL(price);
+      });
+    };
     const renderGas = () => {
       gasOptions.forEach(opt => {
         opt.classList.toggle('selected', String(state.gas) === opt.dataset.gas);
       });
+      renderGasPrice();
     };
     gasOptions.forEach(opt => {
       opt.addEventListener('click', () => {
@@ -240,6 +251,8 @@
     const decoTypeSection = document.getElementById('decoTypeSection');
     const decoCombosSection = document.getElementById('decoCombosSection');
     const decoCombosGrid = document.getElementById('decoCombos');
+    const decoBalloonsSection = document.getElementById('decoBalloonsSection');
+    const decoBalloonsGrid = document.getElementById('decoBalloons');
     const decoAddonsSection = document.getElementById('decoAddonsSection');
     const decoAddonsGrid = document.getElementById('decoAddons');
     const decoSummary = document.getElementById('decoSummary');
@@ -249,28 +262,25 @@
     const isPremium = () => state.package === 'premium' || state.package === 'promax';
 
     const renderDecorationVisibility = () => {
-      // Exibe nota informativa se Premium/Pro Max
-      if (decoIncludedNote) decoIncludedNote.style.display = isPremium() ? '' : 'none';
-      const decoTxt = document.getElementById('decoIncludedText');
-      if (decoTxt) {
-        if (state.package === 'promax') {
-          decoTxt.innerHTML = 'Seu pacote <strong>Pro Max</strong> já inclui decoração completa, arco de bolas e forro de mesa. Esta etapa é opcional caso queira extras.';
-        } else if (state.package === 'premium') {
-          decoTxt.innerHTML = 'Seu pacote <strong>Premium</strong> já inclui decoração básica (kit painel pegue e monte). Esta etapa é opcional caso queira extras.';
-        }
+      // Para Premium/Pro Max: força enabled=true e mostra módulo de personalização direto
+      if (isPremium()) {
+        if (state.decoration) state.decoration.enabled = true;
       }
 
-      // Esconde toda a UI de decoração se Premium (já incluso)
+      if (decoIncludedNote) decoIncludedNote.style.display = isPremium() ? '' : 'none';
+
       const decoQuestion = document.getElementById('decoQuestion');
       if (decoQuestion) decoQuestion.style.display = isPremium() ? 'none' : '';
 
-      // Mostra módulo apenas se enabled=true
-      if (decoModule) decoModule.style.display = (state.decoration?.enabled === true && !isPremium()) ? '' : 'none';
+      // Premium/Pro Max sempre mostra módulo. Outros pacotes: só se enabled=true.
+      if (decoModule) decoModule.style.display = (isPremium() || state.decoration?.enabled === true) ? '' : 'none';
 
       // Sub-seções progressivas
-      if (decoTypeSection) decoTypeSection.style.display = (state.decoration?.enabled === true) ? '' : 'none';
+      const decoActive = isPremium() || state.decoration?.enabled === true;
+      if (decoTypeSection) decoTypeSection.style.display = decoActive ? '' : 'none';
       if (decoCombosSection) decoCombosSection.style.display = state.decoration?.type ? '' : 'none';
-      if (decoAddonsSection) decoAddonsSection.style.display = state.decoration?.combo ? '' : 'none';
+      if (decoBalloonsSection) decoBalloonsSection.style.display = (decoActive && (state.decoration?.combo || isPremium())) ? '' : 'none';
+      if (decoAddonsSection) decoAddonsSection.style.display = (decoActive && (state.decoration?.combo || isPremium())) ? '' : 'none';
     };
 
     const renderDecorationYesNo = () => {
@@ -294,33 +304,205 @@
         return;
       }
 
-      decoCombosGrid.innerHTML = filtered.map(c => `
+      decoCombosGrid.innerHTML = filtered.map(c => {
+        const cover = (c.images && c.images[0]) || c.image || '';
+        return `
         <button class="deco-combo ${state.decoration?.combo === c.id ? 'selected' : ''}" data-combo="${c.id}" type="button">
-          <img src="${c.image}" alt="${c.name}" class="deco-combo-img" loading="lazy">
+          <img src="${cover}" alt="${c.name}" class="deco-combo-img" loading="lazy">
           <div class="deco-combo-body">
             <div class="deco-combo-name">${c.name}</div>
             <p class="deco-combo-desc">${c.description}</p>
             <ul class="deco-combo-items">
               ${c.items.map(i => `<li><i data-lucide="check"></i>${i}</li>`).join('')}
             </ul>
-            <div class="deco-combo-price">${window.SIM.formatBRL(c.price)}</div>
+            <div class="deco-combo-foot">
+              <span class="deco-combo-price">${window.SIM.formatBRL(c.price)}</span>
+              <span class="deco-combo-view"><i data-lucide="zoom-in"></i>Ver detalhes</span>
+            </div>
           </div>
         </button>
-      `).join('');
+      `;}).join('');
 
       decoCombosGrid.querySelectorAll('.deco-combo').forEach(btn => {
         btn.addEventListener('click', () => {
-          state.decoration.combo = btn.dataset.combo;
-          window.SIM.save(state);
-          renderDecorationCombos();
-          renderDecorationVisibility();
-          renderDecorationSummary();
-          renderBudget();
+          const combo = filtered.find(x => x.id === btn.dataset.combo);
+          if (!combo) return;
+          const imgs = (combo.images && combo.images.length) ? combo.images : (combo.image ? [combo.image] : []);
+          const descFull = (combo.description || '') + (combo.items?.length ? '\n\nInclui:\n• ' + combo.items.join('\n• ') : '');
+          openDetailModal({
+            kind: 'combo',
+            id: combo.id,
+            title: combo.name,
+            price: combo.price,
+            description: descFull,
+            images: imgs,
+            selected: state.decoration?.combo === combo.id
+          });
         });
       });
 
       if (window.lucide) window.lucide.createIcons();
     };
+
+    // ===== BALÕES PERSONALIZADOS =====
+    const renderBalloons = () => {
+      if (!decoBalloonsGrid) return;
+      const balloons = window.BALLOONS_DATA || [];
+      if (!balloons.length) {
+        decoBalloonsGrid.innerHTML = '<div class="deco-combo-empty">Nenhum modelo de balão cadastrado.</div>';
+        return;
+      }
+      decoBalloonsGrid.innerHTML = balloons.map(b => `
+        <button class="balloon-card ${state.decoration?.balloon === b.id ? 'selected' : ''}" data-balloon="${b.id}" type="button">
+          <img class="balloon-card-img" src="${(b.images && b.images[0]) || ''}" alt="${b.name}" loading="lazy">
+          <div class="balloon-card-body">
+            <span class="balloon-card-name">${b.name}</span>
+            <span class="balloon-card-desc">${b.shortDesc || ''}</span>
+            <div class="balloon-card-foot">
+              <span class="balloon-card-price">${window.SIM.formatBRL(b.price)}</span>
+              <span class="balloon-card-view"><i data-lucide="zoom-in"></i>Ver detalhes</span>
+            </div>
+          </div>
+        </button>
+      `).join('');
+      decoBalloonsGrid.querySelectorAll('.balloon-card').forEach(card => {
+        card.addEventListener('click', () => {
+          const bal = balloons.find(b => b.id === card.dataset.balloon);
+          if (bal) openDetailModal({
+            kind: 'balloon',
+            id: bal.id,
+            title: bal.name,
+            price: bal.price,
+            description: bal.description || bal.shortDesc || '',
+            images: bal.images || [],
+            selected: state.decoration?.balloon === bal.id
+          });
+        });
+      });
+      if (window.lucide) window.lucide.createIcons();
+    };
+
+    // ===== MODAL DE DETALHES (compartilhado entre balões e decoração) =====
+    const detailModal = document.getElementById('detailModal');
+    const detailTitle = document.getElementById('detailTitle');
+    const detailPrice = document.getElementById('detailPrice');
+    const detailDesc = document.getElementById('detailDesc');
+    const detailMainImg = document.getElementById('detailMainImg');
+    const detailThumbs = document.getElementById('detailThumbs');
+    const detailPrev = document.getElementById('detailPrev');
+    const detailNext = document.getElementById('detailNext');
+    const detailChoose = document.getElementById('detailChoose');
+    const detailZoomBtn = document.getElementById('detailZoomBtn');
+    const detailZoomOverlay = document.getElementById('detailZoomOverlay');
+    const detailZoomImg = document.getElementById('detailZoomImg');
+    const detailZoomClose = document.getElementById('detailZoomClose');
+
+    let modalCtx = null; // { kind, id, images, idx }
+
+    const renderModalGallery = () => {
+      if (!modalCtx) return;
+      const imgs = modalCtx.images || [];
+      const idx = modalCtx.idx || 0;
+      const src = imgs[idx] || '';
+      if (detailMainImg) detailMainImg.src = src;
+      if (detailThumbs) {
+        detailThumbs.innerHTML = imgs.map((u, i) => `
+          <button type="button" class="detail-thumb ${i === idx ? 'active' : ''}" data-thumb-idx="${i}">
+            <img src="${u}" alt="">
+          </button>
+        `).join('');
+        detailThumbs.querySelectorAll('[data-thumb-idx]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            modalCtx.idx = parseInt(btn.dataset.thumbIdx, 10);
+            renderModalGallery();
+          });
+        });
+      }
+      const showNav = imgs.length > 1;
+      if (detailPrev) detailPrev.style.display = showNav ? '' : 'none';
+      if (detailNext) detailNext.style.display = showNav ? '' : 'none';
+    };
+
+    const openDetailModal = (ctx) => {
+      modalCtx = Object.assign({ idx: 0 }, ctx);
+      if (detailTitle) detailTitle.textContent = ctx.title || '';
+      if (detailPrice) detailPrice.textContent = ctx.price != null ? window.SIM.formatBRL(ctx.price) : '';
+      if (detailDesc) detailDesc.textContent = ctx.description || '';
+      if (detailChoose) {
+        const isSelected = !!ctx.selected;
+        detailChoose.querySelector('span').textContent = isSelected ? 'Remover seleção' : 'Escolher este modelo';
+        detailChoose.classList.toggle('btn-outline', isSelected);
+        detailChoose.classList.toggle('btn-primary', !isSelected);
+      }
+      renderModalGallery();
+      detailModal?.classList.add('open');
+      document.body.style.overflow = 'hidden';
+      if (window.lucide) window.lucide.createIcons();
+    };
+
+    const closeDetailModal = () => {
+      detailModal?.classList.remove('open');
+      detailZoomOverlay?.classList.remove('open');
+      document.body.style.overflow = '';
+      modalCtx = null;
+    };
+
+    detailModal?.querySelectorAll('[data-modal-close]').forEach(el => {
+      el.addEventListener('click', closeDetailModal);
+    });
+    detailPrev?.addEventListener('click', () => {
+      if (!modalCtx) return;
+      const len = (modalCtx.images || []).length || 1;
+      modalCtx.idx = (modalCtx.idx - 1 + len) % len;
+      renderModalGallery();
+    });
+    detailNext?.addEventListener('click', () => {
+      if (!modalCtx) return;
+      const len = (modalCtx.images || []).length || 1;
+      modalCtx.idx = (modalCtx.idx + 1) % len;
+      renderModalGallery();
+    });
+    detailZoomBtn?.addEventListener('click', () => {
+      if (!modalCtx) return;
+      const src = (modalCtx.images || [])[modalCtx.idx || 0];
+      if (src && detailZoomImg) {
+        detailZoomImg.src = src;
+        detailZoomOverlay?.classList.add('open');
+      }
+    });
+    detailZoomClose?.addEventListener('click', () => detailZoomOverlay?.classList.remove('open'));
+    detailZoomOverlay?.addEventListener('click', (e) => {
+      if (e.target === detailZoomOverlay) detailZoomOverlay.classList.remove('open');
+    });
+    document.addEventListener('keydown', (e) => {
+      if (!detailModal?.classList.contains('open')) return;
+      if (e.key === 'Escape') {
+        if (detailZoomOverlay?.classList.contains('open')) detailZoomOverlay.classList.remove('open');
+        else closeDetailModal();
+      }
+      if (e.key === 'ArrowLeft') detailPrev?.click();
+      if (e.key === 'ArrowRight') detailNext?.click();
+    });
+
+    detailChoose?.addEventListener('click', () => {
+      if (!modalCtx) return;
+      if (modalCtx.kind === 'balloon') {
+        state.decoration.balloon = (state.decoration.balloon === modalCtx.id) ? null : modalCtx.id;
+        window.SIM.save(state);
+        renderBalloons();
+        renderDecorationSummary();
+        renderBudget();
+      } else if (modalCtx.kind === 'combo') {
+        state.decoration.combo = modalCtx.id;
+        window.SIM.save(state);
+        renderDecorationCombos();
+        renderDecorationVisibility();
+        renderBalloons();
+        renderDecorationSummary();
+        renderBudget();
+      }
+      closeDetailModal();
+    });
 
     const renderDecorationAddons = () => {
       if (!decoAddonsGrid) return;
@@ -364,7 +546,8 @@
         const a = window.DECORATION_DATA.addons.find(x => x.id === id);
         return sum + (a?.price || 0);
       }, 0);
-      const total = (combo?.price || 0) + addonsTotal;
+      const balloon = state.decoration.balloon && (window.BALLOONS_DATA || []).find(b => b.id === state.decoration.balloon);
+      const total = (combo?.price || 0) + addonsTotal + (balloon?.price || 0);
       const addonsCount = (state.decoration.addons || []).length;
 
       decoSummary.style.display = '';
@@ -784,17 +967,16 @@
       const daysInMonth = lastDay.getDate();
       const startWeekday = firstDay.getDay();
       const today = todayMidnight();
+      const availability = window.DataStore?.getDateAvailability?.() || {};
 
       if (calMonthLabel) calMonthLabel.textContent = `${MONTHS_PT[month]} ${year}`;
 
-      // Botão de mês anterior — não deixa ir antes do mês atual
       if (calPrev) {
         const minMonth = today.getFullYear() * 12 + today.getMonth();
         const currMonth = year * 12 + month;
         calPrev.disabled = currMonth <= minMonth;
       }
 
-      // Cabeçalho com dias da semana + slots vazios + dias do mês
       let html = WEEK_PT.map(d => `<div class="cal-day-name">${d}</div>`).join('');
       for (let i = 0; i < startWeekday; i++) html += `<div class="cal-day empty"></div>`;
       for (let d = 1; d <= daysInMonth; d++) {
@@ -803,22 +985,34 @@
         const isPast = dt < today;
         const isToday = iso === todayStr();
         const isSelected = state.date === iso;
+        const avail = availability[iso];
         const cls = ['cal-day'];
-        if (isPast) cls.push('disabled');
-        else cls.push('selectable');
+        let title = '';
+        if (isPast) {
+          cls.push('disabled');
+        } else if (avail?.status === 'occupied') {
+          cls.push('disabled', 'occupied');
+          title = `Data ocupada — ${avail.info}`;
+        } else if (avail?.status === 'blocked') {
+          cls.push('disabled', 'blocked');
+          title = `Indisponível${avail.info ? ' — ' + avail.info : ''}`;
+        } else {
+          cls.push('selectable');
+        }
         if (isToday) cls.push('today');
         if (isSelected) cls.push('selected');
-        html += `<button type="button" class="${cls.join(' ')}" ${isPast ? 'disabled' : ''} data-cal-date="${iso}">${d}</button>`;
+        const isDisabled = isPast || avail?.status === 'occupied' || avail?.status === 'blocked';
+        html += `<button type="button" class="${cls.join(' ')}" ${isDisabled ? 'disabled' : ''} ${title ? `title="${title}"` : ''} data-cal-date="${iso}">${d}</button>`;
       }
       calGrid.innerHTML = html;
 
-      // Listeners
       calGrid.querySelectorAll('.cal-day.selectable').forEach(btn => {
         btn.addEventListener('click', () => {
           state.date = btn.dataset.calDate;
           window.SIM.save(state);
           renderCalendar();
           renderSelectedDate();
+          renderBudget();
         });
       });
     };
@@ -922,6 +1116,10 @@
             label: combo.type === 'pegue-monte' ? 'Pegue e Monte' : 'Decoração Completa',
             value: window.SIM.formatBRL(combo.price)
           });
+        }
+        if (state.decoration.balloon && window.BALLOONS_DATA) {
+          const bal = window.BALLOONS_DATA.find(b => b.id === state.decoration.balloon);
+          if (bal) rows.push({ strongLabel: 'Balões: ' + bal.name, label: 'Personalizado', value: window.SIM.formatBRL(bal.price) });
         }
         (state.decoration.addons || []).forEach(id => {
           const a = DD.addons.find(x => x.id === id);
@@ -1038,59 +1236,79 @@
     };
 
     // ===== GERADOR DA MENSAGEM E ENVIO =====
+    const formatDateLong = (iso) => {
+      if (!iso) return '';
+      const months = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+      const [y, m, d] = iso.split('-').map(Number);
+      return `${d} de ${months[m - 1]} de ${y}`;
+    };
+
     const buildWhatsappMessage = () => {
       const SD = window.SERVICES_DATA;
       const DD = window.DECORATION_DATA;
       const PK = window.SIM_PRICING.packages[state.package];
       const { total } = window.SIM.calculate(state);
+      const fmt = window.SIM.formatBRL;
+      const SEP = '━━━━━━━━━━━━━━━';
 
       const lines = [];
-      lines.push('*🎉 NOVO PEDIDO — CASA DE BIA*');
+      lines.push('🎉 *Seu evento está quase pronto!*');
+      lines.push('Confira o resumo da sua solicitação na Casa de Bia ✨');
       lines.push('');
 
       if (state.customer?.name) lines.push(`👤 *Cliente:* ${state.customer.name}`);
       if (state.customer?.whatsapp) lines.push(`📱 *WhatsApp:* ${formatWhatsapp(state.customer.whatsapp)}`);
-      if (state.date) lines.push(`📅 *Data do evento:* ${formatDatePT(state.date)}`);
-      lines.push('');
+      if (state.date) lines.push(`📅 *Evento:* ${formatDateLong(state.date)}`);
+
+      lines.push(SEP);
 
       // PACOTE
       if (PK) {
-        lines.push(`🎯 *PACOTE:* ${PK.name} — ${window.SIM.formatBRL(PK.price)}`);
-        lines.push(`   • Capacidade: até ${PK.capacity} pessoas`);
-        lines.push(`   • Convidados estimados: ${state.guests || 0}`);
+        const guestLabel = state.guests > 0 ? state.guests : PK.capacity;
+        lines.push(`🎈 *Pacote ${PK.name}*`);
+        lines.push(`Até ${guestLabel} pessoas — ${fmt(PK.price)}`);
         if (state.guests > PK.capacity && PK.extraPerGuest > 0) {
           const extra = state.guests - PK.capacity;
-          lines.push(`   • Excedente: +${extra} pessoa${extra > 1 ? 's' : ''} × ${window.SIM.formatBRL(PK.extraPerGuest)} = ${window.SIM.formatBRL(extra * PK.extraPerGuest)}`);
+          lines.push(`+${extra} convidado${extra > 1 ? 's' : ''} excedente${extra > 1 ? 's' : ''} — ${fmt(extra * PK.extraPerGuest)}`);
         }
-        if (PK.includesGas) lines.push(`   • Gás incluso ✓`);
-        if (PK.includesDecoration) lines.push(`   • Decoração inclusa ✓`);
-        if (PK.includesPhotographer) lines.push(`   • Equipe de fotografia e filmagem (básico) inclusa ✓`);
-      }
-      lines.push('');
-
-      // GÁS
-      if (PK && !PK.includesGas && state.gas !== null) {
-        lines.push(`🔥 *GÁS:* ${state.gas ? `Sim (+${window.SIM.formatBRL(window.SIM_PRICING.gas)})` : 'Não'}`);
         lines.push('');
       }
 
       // DECORAÇÃO
-      if (state.decoration?.enabled === true) {
-        const combo = DD.combos.find(c => c.id === state.decoration.combo);
+      const isPremiumPkg = state.package === 'premium' || state.package === 'promax';
+      if (state.decoration?.enabled === true || isPremiumPkg) {
+        const combo = state.decoration?.combo ? DD.combos.find(c => c.id === state.decoration.combo) : null;
         if (combo) {
-          lines.push(`🎨 *DECORAÇÃO:* ${combo.name} — ${window.SIM.formatBRL(combo.price)}`);
-          lines.push(`   • Tipo: ${combo.type === 'pegue-monte' ? 'Pegue e Monte' : 'Decoração Completa'}`);
-          if ((state.decoration.addons || []).length) {
-            lines.push('   • Adicionais:');
-            state.decoration.addons.forEach(id => {
-              const a = DD.addons.find(x => x.id === id);
-              if (a) lines.push(`      ◦ ${a.name} (+${window.SIM.formatBRL(a.price)})`);
-            });
-          }
+          lines.push(`🎨 *${combo.name}*`);
+          const typeLabel = combo.type === 'pegue-monte' ? 'Pegue e Monte' : 'Decoração Montada';
+          lines.push(`${typeLabel} — ${fmt(combo.price)}`);
+          lines.push('');
+        } else if (isPremiumPkg) {
+          lines.push('🎨 *Decoração inclusa no pacote*');
+          lines.push('Modelo "pegue e monte" com kit básico');
           lines.push('');
         }
-      } else if (state.decoration?.enabled === false) {
-        lines.push(`🎨 *DECORAÇÃO:* Sem decoração`);
+      }
+
+      // BALÕES
+      if (state.decoration?.balloon && window.BALLOONS_DATA) {
+        const bal = window.BALLOONS_DATA.find(b => b.id === state.decoration.balloon);
+        if (bal) {
+          lines.push(`🎈 *Balões: ${bal.name}*`);
+          lines.push(`Personalizado — ${fmt(bal.price)}`);
+          lines.push('');
+        }
+      }
+
+      // ADICIONAIS DE DECORAÇÃO
+      const addonLines = [];
+      (state.decoration?.addons || []).forEach(id => {
+        const a = DD.addons.find(x => x.id === id);
+        if (a) addonLines.push(`• ${a.name} — ${fmt(a.price)}`);
+      });
+      if (addonLines.length) {
+        lines.push('✨ *Adicionais escolhidos*');
+        lines.push(...addonLines);
         lines.push('');
       }
 
@@ -1101,53 +1319,64 @@
       if (svc.animadora?.enabled && svc.animadora.items?.length) {
         const items = svc.animadora.items.map(id => SD.animadora.items.find(i => i.id === id)).filter(Boolean);
         const totalSvc = items.reduce((s, i) => s + i.price, 0);
-        svcLines.push(`   • *Animadora:* ${items.map(i => i.name).join(', ')} — ${window.SIM.formatBRL(totalSvc)}`);
+        svcLines.push(`• Animadora (${items.map(i => i.name).join(', ')}) — ${fmt(totalSvc)}`);
       }
       if (svc.recepcionista?.enabled && svc.recepcionista.hours > 0) {
-        svcLines.push(`   • *Recepcionista:* ${svc.recepcionista.hours}h — ${window.SIM.formatBRL(svc.recepcionista.hours * SD.recepcionista.hourlyRate)}`);
+        svcLines.push(`• Recepcionista (${svc.recepcionista.hours}h) — ${fmt(svc.recepcionista.hours * SD.recepcionista.hourlyRate)}`);
       }
       if (svc.fritadeira?.enabled && svc.fritadeira.hours > 0) {
-        svcLines.push(`   • *Fritadeira:* ${svc.fritadeira.hours}h — ${window.SIM.formatBRL(svc.fritadeira.hours * SD.fritadeira.hourlyRate)}`);
+        svcLines.push(`• Fritadeira (${svc.fritadeira.hours}h) — ${fmt(svc.fritadeira.hours * SD.fritadeira.hourlyRate)}`);
       }
       if (svc.seguranca?.enabled && svc.seguranca.qtd > 0 && svc.seguranca.hours > 0) {
         const base = svc.seguranca.qtd * svc.seguranca.hours * SD.seguranca.hourlyRate;
         const ctrl = SD.seguranca.controlOptions.find(c => c.id === svc.seguranca.controle);
         const totalSeg = base + (ctrl?.price || 0);
-        const ctrlText = ctrl && ctrl.id !== 'nenhum' ? ` (controle: ${ctrl.name})` : '';
-        svcLines.push(`   • *Segurança:* ${svc.seguranca.qtd}× ${svc.seguranca.hours}h${ctrlText} — ${window.SIM.formatBRL(totalSeg)}`);
+        const ctrlText = ctrl && ctrl.id !== 'nenhum' ? `, ${ctrl.name.toLowerCase()}` : '';
+        svcLines.push(`• Segurança (${svc.seguranca.qtd}x / ${svc.seguranca.hours}h${ctrlText}) — ${fmt(totalSeg)}`);
       }
       if (svc.garcom?.enabled && svc.garcom.qtd > 0 && svc.garcom.hours > 0) {
         const cost = svc.garcom.qtd * svc.garcom.hours * SD.garcom.hourlyRate;
-        svcLines.push(`   • *Garçom:* ${svc.garcom.qtd}× ${svc.garcom.hours}h — ${window.SIM.formatBRL(cost)}`);
+        svcLines.push(`• Garçom (${svc.garcom.qtd}x / ${svc.garcom.hours}h) — ${fmt(cost)}`);
       }
       if (svc.dj?.enabled && svc.dj.tipo && svc.dj.hours > 0) {
         const t = SD.dj.types.find(x => x.id === svc.dj.tipo);
         const cost = (SD.dj.hourlyRate + (t?.extraPerHour || 0)) * svc.dj.hours;
-        svcLines.push(`   • *DJ:* ${t?.name || ''} · ${svc.dj.hours}h — ${window.SIM.formatBRL(cost)}`);
+        svcLines.push(`• DJ ${t?.name || ''} (${svc.dj.hours}h) — ${fmt(cost)}`);
       }
       if (svc.fotografo?.enabled && svc.fotografo.pacote) {
         const p = SD.fotografo.packages.find(x => x.id === svc.fotografo.pacote);
-        if (p) svcLines.push(`   • *Fotógrafo:* ${p.name} — ${window.SIM.formatBRL(p.price)}`);
+        if (p) svcLines.push(`• Fotógrafo (${p.name}) — ${fmt(p.price)}`);
       }
       if (svc.storymaker?.enabled && svc.storymaker.pacote) {
         const p = SD.storymaker.packages.find(x => x.id === svc.storymaker.pacote);
-        if (p) svcLines.push(`   • *Story Maker:* ${p.name} — ${window.SIM.formatBRL(p.price)}`);
+        if (p) svcLines.push(`• Story Maker (${p.name}) — ${fmt(p.price)}`);
       }
 
       if (svcLines.length) {
-        lines.push('🛠️ *SERVIÇOS ADICIONAIS:*');
+        lines.push('🛎️ *Serviços adicionais*');
         lines.push(...svcLines);
         lines.push('');
       }
 
-      // TOTAL
-      lines.push('━━━━━━━━━━━━━━━━━━━━');
-      lines.push(`💰 *VALOR TOTAL ESTIMADO:* ${window.SIM.formatBRL(total)}`);
-      lines.push('━━━━━━━━━━━━━━━━━━━━');
-      lines.push('');
-      lines.push('Aguardo retorno para confirmar! 🙏');
+      // GÁS
+      const gasPrice = window.SIM_PRICING.gas || 0;
+      if (PK?.includesGas) {
+        lines.push(`🔥 *Gás incluso no pacote* ✓`);
+        lines.push('');
+      } else if (state.gas === true) {
+        lines.push(`🔥 *Gás incluso* — ${fmt(gasPrice)}`);
+        lines.push('');
+      }
 
-      return lines.join('\n');
+      lines.push(SEP);
+      lines.push(`💰 *Valor total estimado:*`);
+      lines.push(`*${fmt(total)}*`);
+      lines.push('');
+      lines.push('Seu evento já começou a ganhar forma por aqui ✨');
+      lines.push('Já já entraremos em contato para alinhar todos os detalhes! ☺️');
+
+      // Remove possíveis linhas em branco duplicadas
+      return lines.join('\n').replace(/\n{3,}/g, '\n\n');
     };
 
     const sendToWhatsapp = () => {
@@ -1162,7 +1391,11 @@
         return;
       }
       if (!state.date) {
-        showValidationError('Volte para a Etapa 6 e escolha a data do evento.');
+        showValidationError('Volte para a Etapa 1 e escolha a data do evento.');
+        return;
+      }
+      if (!state.package) {
+        showValidationError('Volte para a Etapa 6 e escolha um pacote.');
         return;
       }
 
@@ -1209,13 +1442,13 @@
       }
       if (!canAdvance()) {
         const msgs = {
-          1: 'Selecione um pacote para continuar.',
+          1: 'Selecione a data do evento.',
           2: 'Informe o número de convidados.',
           3: 'Escolha se deseja usar gás.',
           4: state.decoration?.enabled === true
               ? 'Escolha o tipo e um combo de decoração.'
               : 'Indique se deseja decoração.',
-          6: 'Selecione a data do evento.',
+          6: 'Selecione um pacote para continuar.',
           7: 'Preencha seu nome (mín. 3 letras) e um WhatsApp válido.'
         };
         showValidationError(msgs[state.currentStep] || 'Complete a etapa para avançar.');
@@ -1252,6 +1485,7 @@
       renderDecorationTypes();
       renderDecorationVisibility();
       if (state.decoration?.type) renderDecorationCombos();
+      renderBalloons();
       renderDecorationAddons();
       renderDecorationSummary();
       renderServices();
