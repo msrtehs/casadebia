@@ -73,7 +73,7 @@
             <header class="sim-step-header">
               <span class="sim-step-eyebrow">Etapa 4</span>
               <h2 class="sim-step-title">Quantos convidados?</h2>
-              <p class="sim-step-desc">Informe o número aproximado de pessoas. Para o Básico, cobramos R$ 15 por convidado acima de 20.</p>
+              <p class="sim-step-desc" id="guestStepDesc">Informe o número aproximado de pessoas. Para o Básico, cobramos R$ 15 por convidado acima de 20.</p>
             </header>
 
             <div class="sim-counter">
@@ -117,7 +117,7 @@
             <header class="sim-step-header">
               <span class="sim-step-eyebrow">Etapa 3</span>
               <h2 class="sim-step-title">Decoração</h2>
-              <p class="sim-step-desc">Você pode escolher um combo pronto, montar pegue e monte ou seguir sem decoração.</p>
+              <p class="sim-step-desc" id="decoStepDesc">Você pode escolher um combo pronto, montar pegue e monte ou seguir sem decoração.</p>
             </header>
 
             <!-- Aviso para Premium/Pro Max (já incluem decoração) -->
@@ -256,39 +256,42 @@
               <button class="sim-option" data-pkg="essencial" type="button">
                 <div class="sim-option-icon"><i data-lucide="party-popper"></i></div>
                 <div class="sim-option-name">Essencial</div>
-                <div class="sim-option-cap">Até 100 pessoas</div>
+                <div class="sim-option-cap">Até 120 pessoas</div>
                 <div class="sim-option-price">R$ 590<small> /evento</small></div>
                 <ul class="sim-option-features">
                   <li><i data-lucide="check"></i>Tudo do Básico</li>
                   <li><i data-lucide="check"></i>Cozinha gourmet + fogão industrial</li>
                   <li><i data-lucide="check"></i>2 freezers</li>
                   <li><i data-lucide="check"></i>10 mesas e 60 cadeiras</li>
+                  <li><i data-lucide="check"></i>+R$ 10 por excedente</li>
                 </ul>
               </button>
 
               <button class="sim-option gold" data-pkg="premium" type="button">
                 <div class="sim-option-icon"><i data-lucide="crown"></i></div>
                 <div class="sim-option-name">Premium</div>
-                <div class="sim-option-cap">Até 100 pessoas</div>
+                <div class="sim-option-cap">Até 150 pessoas</div>
                 <div class="sim-option-price">R$ 899<small> /evento</small></div>
                 <ul class="sim-option-features">
                   <li><i data-lucide="check"></i>Tudo do Essencial</li>
                   <li><i data-lucide="check"></i>Decoração kit painel (Pegue e Monte)</li>
                   <li><i data-lucide="check"></i>Pula-pula, piscina de bolinha e escorregador</li>
                   <li><i data-lucide="check"></i>Gás incluso</li>
+                  <li><i data-lucide="check"></i>+R$ 10 por excedente</li>
                 </ul>
               </button>
 
               <button class="sim-option promax" data-pkg="promax" type="button">
                 <div class="sim-option-icon"><i data-lucide="gem"></i></div>
                 <div class="sim-option-name">Pro Max</div>
-                <div class="sim-option-cap">Até 100 pessoas</div>
+                <div class="sim-option-cap">Até 200 pessoas</div>
                 <div class="sim-option-price">R$ 1.590<small> /evento</small></div>
                 <ul class="sim-option-features">
                   <li><i data-lucide="check"></i>Tudo do Premium</li>
                   <li><i data-lucide="check"></i>Decoração completa</li>
                   <li><i data-lucide="check"></i>Arco de bolas (até 3 cores) + forro de mesa</li>
                   <li><i data-lucide="check"></i>Equipe de fotografia e filmagem (básico)</li>
+                  <li><i data-lucide="check"></i>Lotação máxima — sem cobrança de excedente</li>
                 </ul>
               </button>
             </div>

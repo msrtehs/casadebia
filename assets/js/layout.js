@@ -85,7 +85,7 @@
             <ul class="footer-list">
               <li><a href="${window.waLink()}" target="_blank" rel="noopener"><i data-lucide="message-circle"></i>(71) 99965-2027</a></li>
               <li><a href="localizacao.html"><i data-lucide="map-pin"></i>Salvador, BA</a></li>
-              <li><a href="#" aria-disabled="true"><i data-lucide="instagram"></i>@casadebia</a></li>
+              <li><a href="https://www.instagram.com/casa.debia" target="_blank" rel="noopener"><i data-lucide="instagram"></i>@casa.debia</a></li>
             </ul>
           </div>
         </div>

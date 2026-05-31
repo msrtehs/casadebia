@@ -172,6 +172,56 @@
   function renderDecoracao() {
     renderCombos();
     renderAddons();
+    renderPromaxIncluded();
+  }
+
+  // Decoração já montada do Pro Max (título + lista de itens)
+  function renderPromaxIncluded() {
+    const root = $('#promaxIncludedRoot');
+    if (!root) return;
+    if (!data.decoration.promaxIncluded) {
+      data.decoration.promaxIncluded = { title: 'Decoração Pro Max — já montada e inclusa', items: [] };
+    }
+    const inc = data.decoration.promaxIncluded;
+
+    root.innerHTML = `
+      <div class="admin-field">
+        <label>Título</label>
+        <input id="promaxIncTitle" value="${escapeAttr(inc.title || '')}">
+      </div>
+      <div class="admin-field" style="margin-top: var(--space-4);">
+        <label>Itens inclusos</label>
+        <div class="array-editor" id="promaxIncItems">
+          ${inc.items.map((it, i) => arrayRowHTML(it, i)).join('')}
+          <span class="array-add" id="btnAddPromaxItem"><i data-lucide="plus"></i>Adicionar item</span>
+        </div>
+      </div>
+    `;
+
+    $('#promaxIncTitle')?.addEventListener('change', (e) => {
+      inc.title = e.target.value;
+      persist();
+    });
+    root.querySelectorAll('#promaxIncItems .array-row input').forEach((inp, i) => {
+      inp.addEventListener('change', () => {
+        inc.items[i] = inp.value;
+        persist();
+      });
+    });
+    root.querySelectorAll('#promaxIncItems .array-row [data-remove]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        inc.items.splice(+btn.dataset.remove, 1);
+        persist();
+        renderPromaxIncluded();
+      });
+    });
+    $('#btnAddPromaxItem')?.addEventListener('click', () => {
+      inc.items.push('Novo item');
+      persist();
+      renderPromaxIncluded();
+    });
+
+    if (window.lucide) window.lucide.createIcons();
   }
 
   function renderCombos() {

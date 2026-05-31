@@ -9,7 +9,8 @@ window.CASA_CONFIG = {
   brand: {
     name: 'Casa de Bia',
     tagline: 'Espaço de Eventos',
-    address: 'Salvador, BA — CEP 40390-455'
+    address: 'R. Dr. Vicente Curvelo de Mendonça, 61 — São Caetano, Salvador - BA, CEP 40390-455',
+    mapsUrl: 'https://maps.app.goo.gl/FarR1ujUWJsqP7DGA'
   }
 };
 

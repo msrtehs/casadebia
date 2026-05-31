@@ -24,9 +24,9 @@
     },
     packages: {
       basico:    { id: 'basico',    name: 'Básico',    price: 299.90, capacity: 20,  extraPerGuest: 15, includesGas: false, includesDecoration: false, includesPhotographer: false },
-      essencial: { id: 'essencial', name: 'Essencial', price: 590,    capacity: 100, extraPerGuest: 0,  includesGas: false, includesDecoration: false, includesPhotographer: false },
-      premium:   { id: 'premium',   name: 'Premium',   price: 899,    capacity: 100, extraPerGuest: 0,  includesGas: true,  includesDecoration: true,  includesPhotographer: false },
-      promax:    { id: 'promax',    name: 'Pro Max',   price: 1590,   capacity: 100, extraPerGuest: 0,  includesGas: true,  includesDecoration: true,  includesPhotographer: true }
+      essencial: { id: 'essencial', name: 'Essencial', price: 590,    capacity: 120, extraPerGuest: 10, includesGas: false, includesDecoration: false, includesPhotographer: false },
+      premium:   { id: 'premium',   name: 'Premium',   price: 899,    capacity: 150, extraPerGuest: 10, includesGas: true,  includesDecoration: true,  includesPhotographer: false },
+      promax:    { id: 'promax',    name: 'Pro Max',   price: 1590,   capacity: 200, extraPerGuest: 0,  includesGas: true,  includesDecoration: true,  includesPhotographer: true }
     },
     decoration: {
       combos: [
@@ -44,7 +44,20 @@
         { id: 'maquina-fumaca', name: 'Máquina de fumaça',           description: 'Efeito especial para fotos',        price: 110 },
         { id: 'arco-floral',    name: 'Arco floral natural',         description: 'Flores naturais para entrada',      price: 220 },
         { id: 'mesa-bolo',      name: 'Mesa de bolo decorada extra', description: 'Mesa adicional para bolo principal',price: 150 }
-      ]
+      ],
+      // Decoração que JÁ vem montada no pacote Pro Max (editável no painel admin)
+      promaxIncluded: {
+        title: 'Decoração Pro Max — já montada e inclusa',
+        items: [
+          '2 Painéis (romano) + forro',
+          '1 Trio de cilindros + capas (consultar cor disponível, podendo mesclar as cores)',
+          '1 Vaso',
+          '5 Bandejas',
+          '1 Jarro',
+          '1 Tapete',
+          '1 LED de letra ou idade'
+        ]
+      }
     },
     balloons: [
       {
@@ -133,7 +146,9 @@
         auth: Object.assign({}, DEFAULTS.auth, parsed.auth || {}),
         // Pacotes: preserva edições, mas adiciona pacotes novos do default
         packages: Object.assign({}, DEFAULTS.packages, parsed.packages || {}),
-        balloons: parsed.balloons || clone(DEFAULTS.balloons)
+        balloons: parsed.balloons || clone(DEFAULTS.balloons),
+        // Decoração: preserva combos/adicionais editados, mas garante chaves novas (ex: promaxIncluded)
+        decoration: Object.assign({}, DEFAULTS.decoration, parsed.decoration || {})
       });
       // Para cada pacote existente, garante todas as chaves novas (ex: includesPhotographer)
       Object.keys(merged.packages).forEach(k => {
@@ -141,6 +156,10 @@
           merged.packages[k] = Object.assign({}, DEFAULTS.packages[k], merged.packages[k]);
         }
       });
+      // Garante a decoração inclusa do Pro Max mesmo em dados salvos antigos
+      if (!merged.decoration.promaxIncluded) {
+        merged.decoration.promaxIncluded = clone(DEFAULTS.decoration.promaxIncluded);
+      }
       return merged;
     } catch { return clone(DEFAULTS); }
   };

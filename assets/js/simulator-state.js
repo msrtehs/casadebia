@@ -7,9 +7,9 @@
   window.SIM_PRICING = window.SIM_PRICING || {
     packages: {
       basico:    { id: 'basico',    name: 'Básico',    price: 299.90, capacity: 20,  extraPerGuest: 15, includesGas: false, includesDecoration: false, includesPhotographer: false },
-      essencial: { id: 'essencial', name: 'Essencial', price: 590,    capacity: 100, extraPerGuest: 0,  includesGas: false, includesDecoration: false, includesPhotographer: false },
-      premium:   { id: 'premium',   name: 'Premium',   price: 899,    capacity: 100, extraPerGuest: 0,  includesGas: true,  includesDecoration: true,  includesPhotographer: false },
-      promax:    { id: 'promax',    name: 'Pro Max',   price: 1590,   capacity: 100, extraPerGuest: 0,  includesGas: true,  includesDecoration: true,  includesPhotographer: true }
+      essencial: { id: 'essencial', name: 'Essencial', price: 590,    capacity: 120, extraPerGuest: 10, includesGas: false, includesDecoration: false, includesPhotographer: false },
+      premium:   { id: 'premium',   name: 'Premium',   price: 899,    capacity: 150, extraPerGuest: 10, includesGas: true,  includesDecoration: true,  includesPhotographer: false },
+      promax:    { id: 'promax',    name: 'Pro Max',   price: 1590,   capacity: 200, extraPerGuest: 0,  includesGas: true,  includesDecoration: true,  includesPhotographer: true }
     },
     gas: 40
   };
@@ -174,7 +174,19 @@
       { id: 'maquina-fumaca', name: 'Máquina de fumaça',           description: 'Efeito especial para fotos',        price: 110 },
       { id: 'arco-floral',    name: 'Arco floral natural',         description: 'Flores naturais para entrada',      price: 220 },
       { id: 'mesa-bolo',      name: 'Mesa de bolo decorada extra', description: 'Mesa adicional para bolo principal',price: 150 }
-    ]
+    ],
+    promaxIncluded: {
+      title: 'Decoração Pro Max — já montada e inclusa',
+      items: [
+        '2 Painéis (romano) + forro',
+        '1 Trio de cilindros + capas (consultar cor disponível, podendo mesclar as cores)',
+        '1 Vaso',
+        '5 Bandejas',
+        '1 Jarro',
+        '1 Tapete',
+        '1 LED de letra ou idade'
+      ]
+    }
   };
 
   const STORAGE_KEY = 'casadebia_simulator_v1';

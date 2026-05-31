@@ -195,6 +195,13 @@
       if (guestInput) guestInput.value = state.guests || 0;
       if (guestMinus) guestMinus.disabled = state.guests <= 0;
 
+      // A frase abaixo do título só faz sentido no Básico (regra de R$ 15 por excedente).
+      // Nos demais pacotes (Essencial, Premium, Pro Max) ela é ocultada.
+      const guestStepDesc = document.getElementById('guestStepDesc');
+      if (guestStepDesc) {
+        guestStepDesc.style.display = state.package === 'basico' ? '' : 'none';
+      }
+
       if (guestInfo && state.package) {
         const pkg = window.SIM_PRICING.packages[state.package];
         if (state.guests > pkg.capacity && pkg.extraPerGuest > 0) {
@@ -278,6 +285,27 @@
       }
 
       if (decoIncludedNote) decoIncludedNote.style.display = isPremium() ? '' : 'none';
+
+      // Etapa 3 — a frase abaixo do título "Decoração" muda para Premium/Pro Max.
+      // No Básico/Essencial mantém a explicação original (combo/pegue e monte/sem decoração).
+      const decoStepDesc = document.getElementById('decoStepDesc');
+      if (decoStepDesc) {
+        decoStepDesc.textContent = isPremium()
+          ? 'Transforme seu evento em uma experiência inesquecível, monte a identidade que você quer ser lembrada!'
+          : 'Você pode escolher um combo pronto, montar pegue e monte ou seguir sem decoração.';
+      }
+
+      // Etapa 4 — decoração já montada do Pro Max (lista de itens, editável no admin).
+      const decoIncludedText = document.getElementById('decoIncludedText');
+      if (decoIncludedText && state.package === 'promax') {
+        const inc = window.DECORATION_DATA?.promaxIncluded;
+        if (inc?.items?.length) {
+          decoIncludedText.innerHTML =
+            `<strong>${inc.title || 'Decoração inclusa'}</strong>` +
+            `<ul class="deco-included-list">${inc.items.map(it => `<li>${it}</li>`).join('')}</ul>` +
+            `<span class="deco-included-extra">Já vem montada e inclusa no pacote. Você ainda pode adicionar elementos extras abaixo.</span>`;
+        }
+      }
 
       const decoQuestion = document.getElementById('decoQuestion');
       if (decoQuestion) decoQuestion.style.display = isPremium() ? 'none' : '';
@@ -1292,6 +1320,10 @@
           lines.push(`🎨 *${combo.name}*`);
           const typeLabel = combo.type === 'pegue-monte' ? 'Pegue e Monte' : 'Decoração Montada';
           lines.push(`${typeLabel} — ${fmt(combo.price)}`);
+          lines.push('');
+        } else if (state.package === 'promax' && DD.promaxIncluded?.items?.length) {
+          lines.push(`🎨 *${DD.promaxIncluded.title || 'Decoração inclusa'}*`);
+          DD.promaxIncluded.items.forEach(it => lines.push(`• ${it}`));
           lines.push('');
         } else if (isPremiumPkg) {
           lines.push('🎨 *Decoração inclusa no pacote*');
