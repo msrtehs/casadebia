@@ -131,6 +131,16 @@
     }
   };
 
+  // ===== STATUS DOS EVENTOS (única fonte de verdade para cores/labels) =====
+  const ORDER_STATUSES = [
+    { id: 'pendente',   label: 'Pendente',        color: '#8A6E65' },
+    { id: 'aguardando', label: 'Aguardando pgto', color: '#D4A942' },
+    { id: 'parcial',    label: 'Pago parcial',    color: '#E08A2B' },
+    { id: 'pago',       label: 'Pago 100%',       color: '#25D366' },
+    { id: 'concluido',  label: 'Concluído',       color: '#128C7E' },
+    { id: 'cancelado',  label: 'Cancelado',       color: '#A8334A' }
+  ];
+
   // Deep clone simples (suficiente para JSON-safe data)
   const clone = (obj) => JSON.parse(JSON.stringify(obj));
 
@@ -224,8 +234,22 @@
   const loadOrders = () => {
     try {
       const raw = localStorage.getItem(ORDERS_KEY);
-      return raw ? JSON.parse(raw) : [];
+      const list = raw ? JSON.parse(raw) : [];
+      // Garante campos de gestão (status/valorPago) em pedidos antigos
+      return list.map(o => Object.assign({ status: 'pendente', valorPago: 0 }, o));
     } catch { return []; }
+  };
+
+  // Atualiza campos de um pedido (status, valorPago, etc.) preservando o resto
+  const updateOrder = (id, patch) => {
+    try {
+      const orders = loadOrders();
+      const idx = orders.findIndex(o => o.id === id);
+      if (idx === -1) return false;
+      orders[idx] = Object.assign({}, orders[idx], patch || {});
+      localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
+      return true;
+    } catch { return false; }
   };
 
   const saveOrder = (order) => {
@@ -321,12 +345,14 @@
   // ===== EXPÕE A API =====
   window.DataStore = {
     DEFAULTS: clone(DEFAULTS),
+    ORDER_STATUSES,
     loadData,
     saveData,
     resetData,
     applyToSimulator,
     loadOrders,
     saveOrder,
+    updateOrder,
     deleteOrder,
     clearOrders,
     loadBlockedDates,

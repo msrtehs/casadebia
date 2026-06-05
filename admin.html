@@ -67,51 +67,75 @@
 
       <!-- DASHBOARD -->
       <section class="admin-section active" id="section-dashboard">
-        <div class="admin-page-header">
+        <div class="dash-topbar">
           <div>
-            <h1>Dashboard</h1>
-            <p>Visão geral dos pedidos recebidos pelo simulador.</p>
+            <h1 id="dashGreeting">Olá, Bia 👋</h1>
+            <p id="dashDate">Carregando…</p>
+          </div>
+          <div class="dash-period" id="dashPeriod" role="group" aria-label="Período">
+            <button type="button" data-period="month" class="active">Este mês</button>
+            <button type="button" data-period="30d">30 dias</button>
+            <button type="button" data-period="year">Ano</button>
+            <button type="button" data-period="all">Tudo</button>
           </div>
         </div>
 
-        <div class="stat-cards">
-          <div class="stat-card">
-            <div class="stat-card-icon"><i data-lucide="receipt"></i></div>
-            <div>
-              <div class="stat-card-num" id="statOrders">0</div>
-              <div class="stat-card-label">Total de pedidos</div>
+        <!-- KPIs (renderizados dinamicamente para animação + tendência) -->
+        <div class="stat-cards" id="dashKpis"></div>
+
+        <!-- Gráficos -->
+        <div class="dash-grid cols-2">
+          <div class="admin-card dash-chart-card">
+            <div class="admin-card-header">
+              <div><h2>Faturamento</h2><p>Últimos 6 meses (todos os pedidos).</p></div>
             </div>
+            <div class="dash-canvas-wrap"><canvas id="chartRevenue"></canvas></div>
           </div>
-          <div class="stat-card">
-            <div class="stat-card-icon gold"><i data-lucide="calendar-check"></i></div>
-            <div>
-              <div class="stat-card-num" id="statLast7">0</div>
-              <div class="stat-card-label">Últimos 7 dias</div>
+          <div class="admin-card dash-chart-card">
+            <div class="admin-card-header">
+              <div><h2>Eventos por status</h2><p>No período selecionado.</p></div>
             </div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-card-icon"><i data-lucide="trending-up"></i></div>
-            <div>
-              <div class="stat-card-num" id="statRevenue">R$ 0</div>
-              <div class="stat-card-label">Soma dos orçamentos</div>
-            </div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-card-icon gold"><i data-lucide="bar-chart-3"></i></div>
-            <div>
-              <div class="stat-card-num" id="statAvg">R$ 0</div>
-              <div class="stat-card-label">Ticket médio</div>
-            </div>
+            <div class="dash-canvas-wrap"><canvas id="chartStatus"></canvas></div>
           </div>
         </div>
 
+        <div class="dash-grid cols-2">
+          <div class="admin-card dash-chart-card">
+            <div class="admin-card-header">
+              <div><h2>Pacotes mais vendidos</h2><p>No período selecionado.</p></div>
+            </div>
+            <div class="dash-canvas-wrap"><canvas id="chartPackages"></canvas></div>
+          </div>
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <div><h2>Pipeline financeiro</h2><p>Recebido × a receber no período.</p></div>
+            </div>
+            <div id="dashPipeline"></div>
+          </div>
+        </div>
+
+        <!-- Próximos eventos -->
+        <div class="admin-card">
+          <div class="admin-card-header">
+            <div>
+              <h2>Próximos eventos</h2>
+              <p>Eventos com data futura, do mais próximo ao mais distante.</p>
+            </div>
+            <a class="btn btn-outline btn-sm" onclick="document.querySelector('[data-section=agenda]').click()">
+              <i data-lucide="calendar"></i>Ver agenda
+            </a>
+          </div>
+          <div id="dashUpcoming"></div>
+        </div>
+
+        <!-- Pedidos recentes -->
         <div class="admin-card">
           <div class="admin-card-header">
             <div>
               <h2>Pedidos recentes</h2>
               <p>Últimos 3 orçamentos enviados pelo simulador.</p>
             </div>
-            <a class="btn btn-outline btn-sm" data-section="historico" onclick="document.querySelector('[data-section=historico]').click()">
+            <a class="btn btn-outline btn-sm" onclick="document.querySelector('[data-section=historico]').click()">
               <i data-lucide="arrow-right"></i>Ver todos
             </a>
           </div>
@@ -268,6 +292,12 @@
             </button>
           </div>
         </div>
+        <div class="dash-period dash-filters" id="historicoFilter" role="group" aria-label="Filtrar por status">
+          <button type="button" data-filter="ativos" class="active">Ativos</button>
+          <button type="button" data-filter="todos">Todos</button>
+          <button type="button" data-filter="concluido">Concluídos</button>
+          <button type="button" data-filter="cancelado">Cancelados</button>
+        </div>
         <div id="historicoRoot"></div>
       </section>
 
@@ -340,10 +370,19 @@
     </main>
   </div>
 
+  <!-- MODAL DE DETALHE / GESTÃO DO EVENTO -->
+  <div class="admin-modal" id="eventModal">
+    <div class="admin-modal-card event-modal-card">
+      <button class="event-modal-close" id="eventModalClose" aria-label="Fechar"><i data-lucide="x"></i></button>
+      <div id="eventModalBody"></div>
+    </div>
+  </div>
+
   <!-- TOAST -->
   <div class="admin-toast" id="adminToast"></div>
 
   <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="assets/js/config.js"></script>
   <script src="assets/js/firebase-config.js"></script>
   <script src="assets/js/data-store.js"></script>

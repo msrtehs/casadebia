@@ -78,30 +78,375 @@
     }
   });
 
+  // ===== STATUS HELPERS =====
+  const STATUSES = window.DataStore.ORDER_STATUSES || [
+    { id: 'pendente', label: 'Pendente', color: '#8A6E65' }
+  ];
+  const statusById = (id) => STATUSES.find(s => s.id === id) || STATUSES[0];
+  const statusBadge = (id) => {
+    const s = statusById(id);
+    return `<span class="status-badge" style="--st:${s.color}"><span class="status-dot"></span>${s.label}</span>`;
+  };
+  const isActive = (o) => o.status !== 'cancelado';
+
   // ===== DASHBOARD =====
+  let dashPeriod = 'month';
+  const charts = {};
+
+  function periodRange(period) {
+    const now = new Date();
+    const end = Date.now();
+    let start, prevStart, prevEnd;
+    if (period === 'month') {
+      start = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+      prevStart = new Date(now.getFullYear(), now.getMonth() - 1, 1).getTime();
+      prevEnd = start;
+    } else if (period === '30d') {
+      start = end - 30 * 864e5; prevStart = end - 60 * 864e5; prevEnd = start;
+    } else if (period === 'year') {
+      start = new Date(now.getFullYear(), 0, 1).getTime();
+      prevStart = new Date(now.getFullYear() - 1, 0, 1).getTime();
+      prevEnd = start;
+    } else { // all
+      start = 0; prevStart = 0; prevEnd = 0;
+    }
+    return { start, end, prevStart, prevEnd };
+  }
+
+  const ordTime = (o) => new Date(o.createdAt).getTime();
+  const inRange = (o, a, b) => { const t = ordTime(o); return t >= a && t < b; };
+
+  // Série numérica em ~12 baldes dentro do intervalo (para sparklines)
+  function bucketSeries(orders, start, end, valueFn) {
+    const buckets = 12;
+    let s = start;
+    if (!s) {
+      const times = orders.map(ordTime).filter(Boolean);
+      s = times.length ? Math.min(...times) : end - 864e5;
+    }
+    const span = (end - s) || 1;
+    const arr = new Array(buckets).fill(0);
+    orders.forEach(o => {
+      const t = ordTime(o);
+      if (t < s || t > end) return;
+      let bi = Math.floor(((t - s) / span) * buckets);
+      bi = Math.max(0, Math.min(buckets - 1, bi));
+      arr[bi] += valueFn(o);
+    });
+    return arr;
+  }
+
+  function sparkline(series, color) {
+    if (!series || !series.length) series = [0, 0];
+    if (series.length === 1) series = [series[0], series[0]];
+    const w = 100, h = 30;
+    const max = Math.max(...series), min = Math.min(...series);
+    const span = (max - min) || 1;
+    const pts = series.map((v, i) => {
+      const x = (i / (series.length - 1)) * w;
+      const y = h - ((v - min) / span) * (h - 4) - 2;
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    }).join(' ');
+    return `<svg class="kpi-spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+      <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>`;
+  }
+
+  function trendHTML(cur, prev) {
+    if (!prev && !cur) return `<span class="kpi-trend flat">—</span>`;
+    if (!prev) return `<span class="kpi-trend up"><i data-lucide="sparkles"></i>novo</span>`;
+    const pct = ((cur - prev) / prev) * 100;
+    const dir = pct >= 0 ? 'up' : 'down';
+    const icon = pct >= 0 ? 'trending-up' : 'trending-down';
+    return `<span class="kpi-trend ${dir}"><i data-lucide="${icon}"></i>${pct >= 0 ? '+' : ''}${pct.toFixed(0)}%</span>`;
+  }
+
+  function animateNum(el, to, fmt) {
+    const dur = 650, t0 = performance.now();
+    function tick(t) {
+      const p = Math.min(1, (t - t0) / dur);
+      const eased = 1 - Math.pow(1 - p, 3);
+      el.textContent = fmt(to * eased);
+      if (p < 1) requestAnimationFrame(tick);
+      else el.textContent = fmt(to);
+    }
+    requestAnimationFrame(tick);
+  }
+
   function renderDashboard() {
     const orders = window.DataStore.loadOrders();
-    const totalRevenue = orders.reduce((s, o) => s + (o.total || 0), 0);
-    const last7 = orders.filter(o => {
-      const d = new Date(o.createdAt);
-      const week = Date.now() - 7 * 24 * 60 * 60 * 1000;
-      return d.getTime() >= week;
-    });
-    $('#statOrders').textContent = orders.length;
-    $('#statLast7').textContent = last7.length;
-    $('#statRevenue').textContent = formatBRL(totalRevenue);
-    $('#statAvg').textContent = orders.length ? formatBRL(totalRevenue / orders.length) : 'R$ 0';
+    const { start, end, prevStart, prevEnd } = periodRange(dashPeriod);
+    const todayIso = new Date().toISOString().slice(0, 10);
 
-    // Últimos 3 pedidos
+    // Saudação / data
+    const dateEl = $('#dashDate');
+    if (dateEl) {
+      dateEl.textContent = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
+    }
+
+    // Conjuntos filtrados
+    const cur = (dashPeriod === 'all') ? orders.slice() : orders.filter(o => inRange(o, start, end));
+    const prev = (dashPeriod === 'all') ? [] : orders.filter(o => inRange(o, prevStart, prevEnd));
+    const curActive = cur.filter(isActive);
+    const prevActive = prev.filter(isActive);
+
+    const sum = (arr, fn) => arr.reduce((s, o) => s + (fn(o) || 0), 0);
+    const revenue = sum(curActive, o => o.total);
+    const prevRevenue = sum(prevActive, o => o.total);
+    const paid = sum(curActive, o => o.valorPago);
+    const prevPaid = sum(prevActive, o => o.valorPago);
+    const count = curActive.length;
+    const prevCount = prevActive.length;
+    const avg = count ? revenue / count : 0;
+    const prevAvg = prevCount ? prevRevenue / prevCount : 0;
+    // A receber: snapshot de todos os pedidos ativos não quitados
+    const pending = orders.filter(isActive).reduce((s, o) => s + Math.max(0, (o.total || 0) - (o.valorPago || 0)), 0);
+    const futureCount = orders.filter(o => isActive(o) && o.eventDate && o.eventDate >= todayIso).length;
+
+    // Séries para sparklines
+    const revSeries = bucketSeries(curActive, start, end, o => o.total);
+    const paidSeries = bucketSeries(curActive, start, end, o => o.valorPago);
+    const countSeries = bucketSeries(curActive, start, end, () => 1);
+
+    const kpis = [
+      { label: 'Faturamento', icon: 'dollar-sign', tone: '', val: revenue, prev: prevRevenue, fmt: 'brl', spark: revSeries, sc: 'var(--rose)' },
+      { label: 'Recebido', icon: 'wallet', tone: 'green', val: paid, prev: prevPaid, fmt: 'brl', spark: paidSeries, sc: 'var(--whatsapp)' },
+      { label: 'A receber', icon: 'hourglass', tone: 'gold', val: pending, fmt: 'brl', snapshot: true },
+      { label: 'Ticket médio', icon: 'bar-chart-3', tone: 'gold', val: avg, prev: prevAvg, fmt: 'brl' },
+      { label: 'Contratos', icon: 'file-check', tone: '', val: count, prev: prevCount, fmt: 'int', spark: countSeries, sc: 'var(--rose)' },
+      { label: 'Eventos futuros', icon: 'calendar-clock', tone: 'green', val: futureCount, fmt: 'int', snapshot: true }
+    ];
+
+    const kpiRoot = $('#dashKpis');
+    kpiRoot.innerHTML = kpis.map(k => `
+      <div class="stat-card kpi">
+        <div class="kpi-head">
+          <div class="stat-card-icon ${k.tone}"><i data-lucide="${k.icon}"></i></div>
+          ${k.snapshot ? '' : trendHTML(k.val, k.prev)}
+        </div>
+        <div class="stat-card-num" data-to="${k.val}" data-fmt="${k.fmt}">${k.fmt === 'brl' ? 'R$ 0' : '0'}</div>
+        <div class="stat-card-label">${k.label}</div>
+        ${k.spark ? sparkline(k.spark, k.sc) : '<div class="kpi-spark-empty"></div>'}
+      </div>
+    `).join('');
+    kpiRoot.querySelectorAll('.stat-card-num').forEach(el => {
+      const to = Number(el.dataset.to) || 0;
+      const fmt = el.dataset.fmt === 'brl' ? formatBRL : (n => String(Math.round(n)));
+      animateNum(el, to, fmt);
+    });
+
+    renderRevenueChart(orders);
+    renderStatusChart(cur);
+    renderPackagesChart(curActive);
+    renderPipeline(curActive);
+    renderUpcoming(orders, todayIso);
+
+    // Pedidos recentes
     const recent = orders.slice(0, 3);
     const recentEl = $('#recentOrders');
     if (recent.length === 0) {
       recentEl.innerHTML = `<div class="admin-empty"><i data-lucide="inbox"></i><p>Nenhum pedido ainda. Quando alguém fechar pelo simulador, aparece aqui.</p></div>`;
     } else {
       recentEl.innerHTML = recent.map(orderCardHTML).join('');
+      attachOrderListeners(recentEl);
     }
     if (window.lucide) window.lucide.createIcons();
   }
+
+  function destroyChart(key) {
+    if (charts[key]) { charts[key].destroy(); charts[key] = null; }
+  }
+  // Preserva o <canvas> (apenas mostra/esconde), permitindo o gráfico voltar ao trocar o período
+  function chartReset(canvasId) {
+    const c = document.getElementById(canvasId);
+    if (!c) return null;
+    c.style.display = '';
+    c.parentElement.querySelectorAll('.dash-empty').forEach(e => e.remove());
+    return c;
+  }
+  function noChart(canvasId, key, msg) {
+    destroyChart(key);
+    const c = document.getElementById(canvasId);
+    if (!c) return;
+    c.style.display = 'none';
+    const wrap = c.parentElement;
+    wrap.querySelectorAll('.dash-empty').forEach(e => e.remove());
+    const div = document.createElement('div');
+    div.className = 'dash-empty';
+    div.innerHTML = `<i data-lucide="bar-chart-3"></i><p>${msg}</p>`;
+    wrap.appendChild(div);
+    if (window.lucide) window.lucide.createIcons();
+  }
+  const CHART_FONT = "Inter, sans-serif";
+
+  function renderRevenueChart(orders) {
+    if (!window.Chart) return noChart('chartRevenue', 'revenue', 'Gráfico indisponível (sem conexão).');
+    const now = new Date();
+    const months = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      months.push({ y: d.getFullYear(), m: d.getMonth(), label: d.toLocaleDateString('pt-BR', { month: 'short' }), total: 0 });
+    }
+    orders.filter(isActive).forEach(o => {
+      const d = new Date(o.createdAt);
+      const b = months.find(x => x.y === d.getFullYear() && x.m === d.getMonth());
+      if (b) b.total += (o.total || 0);
+    });
+    destroyChart('revenue');
+    const ctx = chartReset('chartRevenue');
+    if (!ctx) return;
+    charts.revenue = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: months.map(m => m.label),
+        datasets: [{
+          data: months.map(m => m.total),
+          backgroundColor: 'rgba(200, 68, 90, 0.85)',
+          hoverBackgroundColor: '#A8334A',
+          borderRadius: 8,
+          maxBarThickness: 46
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: (c) => formatBRL(c.parsed.y) } }
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { font: { family: CHART_FONT } } },
+          y: { beginAtZero: true, ticks: { font: { family: CHART_FONT }, callback: (v) => 'R$ ' + (v >= 1000 ? (v / 1000) + 'k' : v) }, grid: { color: 'rgba(0,0,0,0.05)' } }
+        }
+      }
+    });
+  }
+
+  function renderStatusChart(curOrders) {
+    if (!window.Chart) return noChart('chartStatus', 'status', 'Gráfico indisponível (sem conexão).');
+    const counts = STATUSES.map(s => ({ ...s, n: curOrders.filter(o => o.status === s.id).length })).filter(s => s.n > 0);
+    if (!counts.length) return noChart('chartStatus', 'status', 'Nenhum evento no período.');
+    destroyChart('status');
+    const ctx = chartReset('chartStatus');
+    if (!ctx) return;
+    charts.status = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: counts.map(s => s.label),
+        datasets: [{ data: counts.map(s => s.n), backgroundColor: counts.map(s => s.color), borderWidth: 2, borderColor: '#fff' }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false, cutout: '62%',
+        plugins: { legend: { position: 'right', labels: { font: { family: CHART_FONT }, boxWidth: 12, padding: 12 } } }
+      }
+    });
+  }
+
+  function renderPackagesChart(curActive) {
+    if (!window.Chart) return noChart('chartPackages', 'packages', 'Gráfico indisponível (sem conexão).');
+    const pkgs = data.packages || {};
+    const counts = {};
+    curActive.forEach(o => { const id = o.packageId || 'outro'; counts[id] = (counts[id] || 0) + 1; });
+    const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+    if (!entries.length) return noChart('chartPackages', 'packages', 'Nenhum evento no período.');
+    destroyChart('packages');
+    const ctx = chartReset('chartPackages');
+    if (!ctx) return;
+    charts.packages = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: entries.map(([id]) => pkgs[id]?.name || id),
+        datasets: [{ data: entries.map(([, n]) => n), backgroundColor: 'rgba(212, 169, 66, 0.85)', hoverBackgroundColor: '#B58E2F', borderRadius: 8, maxBarThickness: 28 }]
+      },
+      options: {
+        indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => c.parsed.x + ' evento(s)' } } },
+        scales: {
+          x: { beginAtZero: true, ticks: { precision: 0, font: { family: CHART_FONT } }, grid: { color: 'rgba(0,0,0,0.05)' } },
+          y: { grid: { display: false }, ticks: { font: { family: CHART_FONT } } }
+        }
+      }
+    });
+  }
+
+  function renderPipeline(curActive) {
+    const root = $('#dashPipeline');
+    if (!root) return;
+    const total = curActive.reduce((s, o) => s + (o.total || 0), 0);
+    const paid = curActive.reduce((s, o) => s + (o.valorPago || 0), 0);
+    const pending = Math.max(0, total - paid);
+    if (total === 0) {
+      root.innerHTML = `<div class="dash-empty"><i data-lucide="wallet"></i><p>Sem valores no período.</p></div>`;
+      if (window.lucide) window.lucide.createIcons();
+      return;
+    }
+    const pctPaid = Math.round((paid / total) * 100);
+    root.innerHTML = `
+      <div class="pipe-bar">
+        <div class="pipe-fill" style="width:${pctPaid}%"></div>
+      </div>
+      <div class="pipe-legend">
+        <div><span class="pipe-key paid"></span>Recebido <strong>${formatBRL(paid)}</strong> <small>(${pctPaid}%)</small></div>
+        <div><span class="pipe-key pending"></span>A receber <strong>${formatBRL(pending)}</strong> <small>(${100 - pctPaid}%)</small></div>
+        <div class="pipe-total">Total no período <strong>${formatBRL(total)}</strong></div>
+      </div>
+    `;
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  function countdownLabel(eventIso, todayIso) {
+    const a = new Date(eventIso + 'T00:00:00'), b = new Date(todayIso + 'T00:00:00');
+    const days = Math.round((a - b) / 864e5);
+    if (days === 0) return { txt: 'Hoje', cls: 'soon' };
+    if (days === 1) return { txt: 'Amanhã', cls: 'soon' };
+    if (days <= 7) return { txt: `Faltam ${days} dias`, cls: 'soon' };
+    return { txt: `Faltam ${days} dias`, cls: '' };
+  }
+
+  function renderUpcoming(orders, todayIso) {
+    const root = $('#dashUpcoming');
+    if (!root) return;
+    const upcoming = orders
+      .filter(o => isActive(o) && o.eventDate && o.eventDate >= todayIso)
+      .sort((a, b) => a.eventDate.localeCompare(b.eventDate))
+      .slice(0, 5);
+    if (!upcoming.length) {
+      root.innerHTML = `<div class="admin-empty"><i data-lucide="calendar-x"></i><p>Nenhum evento futuro agendado.</p></div>`;
+      if (window.lucide) window.lucide.createIcons();
+      return;
+    }
+    root.innerHTML = '<div class="upcoming-list">' + upcoming.map(o => {
+      const d = new Date(o.eventDate + 'T00:00:00');
+      const cd = countdownLabel(o.eventDate, todayIso);
+      return `
+        <div class="upcoming-item" data-open-order="${o.id}">
+          <div class="upcoming-date">
+            <span class="up-day">${String(d.getDate()).padStart(2, '0')}</span>
+            <span class="up-mon">${d.toLocaleDateString('pt-BR', { month: 'short' })}</span>
+          </div>
+          <div class="upcoming-info">
+            <strong>${escapeHTML(o.customerName || 'Sem nome')}</strong>
+            <div class="upcoming-meta">${statusBadge(o.status)} <span class="up-count ${cd.cls}">${cd.txt}</span></div>
+          </div>
+          <div class="upcoming-total">${formatBRL(o.total || 0)}</div>
+          <i data-lucide="chevron-right" class="upcoming-arrow"></i>
+        </div>
+      `;
+    }).join('') + '</div>';
+    root.querySelectorAll('[data-open-order]').forEach(el => {
+      el.addEventListener('click', () => openEventModal(el.dataset.openOrder));
+    });
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  // Listeners do filtro de período
+  $$('#dashPeriod button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      $$('#dashPeriod button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      dashPeriod = btn.dataset.period;
+      renderDashboard();
+    });
+  });
 
   // ===== PACOTES =====
   function renderPacotes() {
@@ -779,17 +1124,39 @@
   });
 
   // ===== HISTÓRICO =====
+  let historicoFilter = 'ativos';
+  function filterOrders(orders, filter) {
+    if (filter === 'todos') return orders;
+    if (filter === 'concluido') return orders.filter(o => o.status === 'concluido');
+    if (filter === 'cancelado') return orders.filter(o => o.status === 'cancelado');
+    // ativos: tudo que não é concluído nem cancelado
+    return orders.filter(o => o.status !== 'concluido' && o.status !== 'cancelado');
+  }
   function renderHistorico() {
     const root = $('#historicoRoot');
     const orders = window.DataStore.loadOrders();
     if (!orders.length) {
       root.innerHTML = `<div class="admin-empty"><i data-lucide="inbox"></i><p>Nenhum pedido recebido ainda. Quando alguém usar o simulador e clicar em "Enviar para WhatsApp", aparece aqui.</p></div>`;
+      if (window.lucide) window.lucide.createIcons();
+      return;
+    }
+    const filtered = filterOrders(orders, historicoFilter);
+    if (!filtered.length) {
+      root.innerHTML = `<div class="admin-empty"><i data-lucide="filter"></i><p>Nenhum pedido neste filtro.</p></div>`;
     } else {
-      root.innerHTML = orders.map(orderCardHTML).join('');
+      root.innerHTML = filtered.map(orderCardHTML).join('');
       attachOrderListeners(root);
     }
     if (window.lucide) window.lucide.createIcons();
   }
+  $$('#historicoFilter button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      $$('#historicoFilter button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      historicoFilter = btn.dataset.filter;
+      renderHistorico();
+    });
+  });
   $('#btnClearOrders')?.addEventListener('click', () => {
     if (!confirm('Apagar TODO o histórico de pedidos? Esta ação não pode ser desfeita.')) return;
     window.DataStore.clearOrders();
@@ -802,6 +1169,8 @@
     const dateStr = date.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
     const eventDate = o.eventDate ? new Date(o.eventDate + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
     const wa = o.customerWhatsapp ? formatWhatsappDisplay(o.customerWhatsapp) : '—';
+    const pago = o.valorPago || 0;
+    const aReceber = Math.max(0, (o.total || 0) - pago);
     return `
       <div class="order-card" data-order-id="${o.id}">
         <div class="order-head">
@@ -814,12 +1183,17 @@
               <span><i data-lucide="users"></i>${o.guests || 0} convidados</span>
             </div>
           </div>
-          <div class="order-total">${formatBRL(o.total || 0)}</div>
+          <div class="order-head-right">
+            ${statusBadge(o.status)}
+            <div class="order-total">${formatBRL(o.total || 0)}</div>
+            ${pago > 0 ? `<div class="order-paid">Pago ${formatBRL(pago)} · falta ${formatBRL(aReceber)}</div>` : ''}
+          </div>
         </div>
         <pre class="order-msg">${escapeAttr(o.message || '')}</pre>
         <div class="order-actions">
+          <button class="btn btn-primary btn-sm" data-open-order="${o.id}"><i data-lucide="settings-2"></i>Detalhes / gerir</button>
           <button class="btn btn-outline btn-sm" data-toggle-msg><i data-lucide="eye"></i>Ver mensagem</button>
-          <a class="btn btn-whatsapp btn-sm" href="${window.waLink ? window.waLink(o.message) : '#'}" target="_blank" rel="noopener"><i data-lucide="send"></i>Reabrir no WhatsApp</a>
+          <a class="btn btn-whatsapp btn-sm" href="${window.waLink ? window.waLink(o.message) : '#'}" target="_blank" rel="noopener"><i data-lucide="send"></i>WhatsApp</a>
           <button class="btn btn-ghost btn-sm" data-delete-order="${o.id}"><i data-lucide="trash-2"></i>Excluir</button>
         </div>
       </div>
@@ -831,15 +1205,104 @@
         btn.closest('.order-card').classList.toggle('expanded');
       });
     });
+    root.querySelectorAll('[data-open-order]').forEach(btn => {
+      btn.addEventListener('click', () => openEventModal(btn.dataset.openOrder));
+    });
     root.querySelectorAll('[data-delete-order]').forEach(btn => {
       btn.addEventListener('click', () => {
         const id = btn.dataset.deleteOrder;
         if (!confirm('Excluir este pedido do histórico?')) return;
         window.DataStore.deleteOrder(id);
         toast('Pedido excluído');
-        renderHistorico();
+        refreshAfterOrderChange();
       });
     });
+  }
+
+  // ===== MODAL DE DETALHE / GESTÃO DO EVENTO =====
+  const eventModal = $('#eventModal');
+  function closeEventModal() { eventModal?.classList.remove('open'); }
+  $('#eventModalClose')?.addEventListener('click', closeEventModal);
+  eventModal?.addEventListener('click', (e) => { if (e.target === eventModal) closeEventModal(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && eventModal?.classList.contains('open')) closeEventModal(); });
+
+  function refreshAfterOrderChange() {
+    if ($('#section-dashboard')?.classList.contains('active')) renderDashboard();
+    if ($('#section-historico')?.classList.contains('active')) renderHistorico();
+    if ($('#section-agenda')?.classList.contains('active')) renderAgenda();
+  }
+
+  function openEventModal(orderId) {
+    const o = window.DataStore.loadOrders().find(x => x.id === orderId);
+    if (!o) { toast('Pedido não encontrado', 'error'); return; }
+    const body = $('#eventModalBody');
+    const dateStr = new Date(o.createdAt).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    const eventDate = o.eventDate ? new Date(o.eventDate + 'T00:00:00').toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }) : '—';
+    const wa = o.customerWhatsapp ? formatWhatsappDisplay(o.customerWhatsapp) : '—';
+    const aReceber = Math.max(0, (o.total || 0) - (o.valorPago || 0));
+    body.innerHTML = `
+      <div class="event-modal-head">
+        <div>
+          <h3>${escapeHTML(o.customerName || 'Sem nome')}</h3>
+          <div class="event-modal-sub">${statusBadge(o.status)}</div>
+        </div>
+        <div class="event-modal-total">${formatBRL(o.total || 0)}</div>
+      </div>
+      <div class="event-modal-meta">
+        <span><i data-lucide="calendar"></i>${eventDate}</span>
+        <span><i data-lucide="message-circle"></i>${wa}</span>
+        <span><i data-lucide="users"></i>${o.guests || 0} convidados</span>
+        <span><i data-lucide="clock"></i>Recebido ${dateStr}</span>
+      </div>
+      <div class="event-manage">
+        <div class="admin-field">
+          <label>Status do evento</label>
+          <select id="evStatus">
+            ${STATUSES.map(s => `<option value="${s.id}" ${o.status === s.id ? 'selected' : ''}>${s.label}</option>`).join('')}
+          </select>
+        </div>
+        <div class="admin-field">
+          <label>Valor pago</label>
+          <div class="admin-field-prefix"><span class="prefix">R$</span><input type="number" min="0" id="evPaid" value="${o.valorPago || 0}"></div>
+        </div>
+        <div class="event-receivable">
+          <span>A receber</span>
+          <strong id="evReceivable">${formatBRL(aReceber)}</strong>
+        </div>
+      </div>
+      <details class="event-msg-details" open>
+        <summary>Resumo completo do evento</summary>
+        <pre class="order-msg event-msg-full">${escapeHTML(o.message || 'Sem detalhes salvos.')}</pre>
+      </details>
+      <div class="event-modal-actions">
+        <button class="btn btn-primary" id="evSave"><i data-lucide="check"></i>Salvar alterações</button>
+        <a class="btn btn-whatsapp" href="${window.waLink ? window.waLink(o.message) : '#'}" target="_blank" rel="noopener"><i data-lucide="send"></i>WhatsApp</a>
+        <button class="btn btn-ghost" id="evDelete"><i data-lucide="trash-2"></i>Excluir</button>
+      </div>
+    `;
+    eventModal.classList.add('open');
+
+    $('#evPaid')?.addEventListener('input', () => {
+      const paid = Number($('#evPaid').value) || 0;
+      $('#evReceivable').textContent = formatBRL(Math.max(0, (o.total || 0) - paid));
+    });
+    $('#evSave')?.addEventListener('click', () => {
+      window.DataStore.updateOrder(orderId, {
+        status: $('#evStatus').value,
+        valorPago: Number($('#evPaid').value) || 0
+      });
+      toast('Evento atualizado');
+      closeEventModal();
+      refreshAfterOrderChange();
+    });
+    $('#evDelete')?.addEventListener('click', () => {
+      if (!confirm('Excluir este pedido do histórico?')) return;
+      window.DataStore.deleteOrder(orderId);
+      toast('Pedido excluído');
+      closeEventModal();
+      refreshAfterOrderChange();
+    });
+    if (window.lucide) window.lucide.createIcons();
   }
 
   // ===== HELPERS =====
@@ -855,6 +1318,8 @@
     if (str == null) return '';
     return String(str).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
+  // Alias usado em várias seções (Balões, Agenda, Dashboard)
+  const escapeHTML = escapeAttr;
   function formatWhatsappDisplay(digits) {
     const d = String(digits).replace(/\D/g, '');
     if (d.length === 11) return `(${d.slice(0,2)}) ${d.slice(2,7)}-${d.slice(7)}`;
