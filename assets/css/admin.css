@@ -1096,3 +1096,145 @@ body.admin-body {
   .admin-nav-link,
   .pipe-fill { animation: none !important; transition: none !important; }
 }
+
+/* ============================================
+   BLOCO D — CALENDÁRIO + NOTAS
+   ============================================ */
+
+/* ===== CALENDÁRIO ===== */
+.cal-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+.cal-toolbar h2 {
+  margin: 0;
+  font-size: var(--fs-lg);
+  text-transform: capitalize;
+  min-width: 180px;
+  text-align: center;
+}
+.cal-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+.cal-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.cal-dot { width: 12px; height: 12px; border-radius: 4px; display: inline-block; }
+.cal-dot.disponivel   { background: rgba(37, 211, 102, 0.25); border: 1px solid var(--whatsapp); }
+.cal-dot.interessado  { background: var(--gold); }
+.cal-dot.fechado      { background: var(--rose); }
+.cal-dot.indisponivel { background: var(--muted); }
+
+.cal-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+.cal-weekdays span {
+  text-align: center;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: var(--space-2);
+}
+.cal-cell {
+  min-height: 76px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-2);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  overflow: hidden;
+}
+.cal-cell.empty { border: none; background: transparent; cursor: default; }
+.cal-cell:not(.empty):hover { transform: translateY(-2px); box-shadow: var(--shadow-sm); }
+.cal-num { font-weight: 700; font-size: var(--fs-sm); color: var(--dark); }
+.cal-info {
+  font-size: 0.66rem;
+  line-height: 1.2;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.cal-cell.today { outline: 2px solid var(--dark); outline-offset: -1px; }
+.cal-cell.disponivel   { background: rgba(37, 211, 102, 0.08); }
+.cal-cell.interessado  { background: var(--gold-light); border-color: var(--gold); }
+.cal-cell.fechado      { background: var(--rose-light); border-color: var(--rose); }
+.cal-cell.indisponivel { background: var(--bg); border-style: dashed; }
+.cal-cell.indisponivel .cal-num,
+.cal-cell.indisponivel .cal-info { color: var(--muted); }
+
+@media (max-width: 600px) {
+  .cal-cell { min-height: 56px; padding: 4px; }
+  .cal-info { display: none; }
+  .cal-toolbar h2 { min-width: 0; font-size: var(--fs-md); }
+}
+
+/* ===== BLOCO DE NOTAS ===== */
+.notes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--space-4);
+}
+.note-card {
+  background: var(--gold-light);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow var(--transition-fast);
+}
+.note-card:hover { box-shadow: var(--shadow-md); }
+.note-title {
+  border: none;
+  background: transparent;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-md);
+  color: var(--dark);
+  outline: none;
+  padding: 0;
+}
+.note-title::placeholder { color: var(--gold-dark); opacity: 0.6; }
+.note-body {
+  border: none;
+  background: transparent;
+  resize: vertical;
+  outline: none;
+  font-family: var(--font-body);
+  font-size: var(--fs-sm);
+  color: var(--text);
+  line-height: 1.6;
+  padding: 0;
+  min-height: 100px;
+}
+.note-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid rgba(181, 142, 47, 0.25);
+  padding-top: var(--space-2);
+  margin-top: var(--space-1);
+}
+.note-date { font-size: var(--fs-xs); color: var(--gold-dark); }

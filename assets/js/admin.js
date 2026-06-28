@@ -54,7 +54,9 @@
     servicos: renderServicos,
     config: renderConfig,
     historico: renderHistorico,
-    agenda: renderAgenda
+    agenda: renderAgenda,
+    calendario: renderCalendario,
+    notas: renderNotas
   };
 
   $$('.admin-nav-link[data-section]').forEach(link => {
@@ -1536,6 +1538,120 @@
     toast('Data bloqueada');
     renderAgenda();
   });
+
+  // ===== BLOCO DE NOTAS =====
+  function renderNotas() {
+    const root = $('#notasRoot');
+    if (!root) return;
+    const notes = window.DataStore.loadNotes();
+    if (!notes.length) {
+      root.innerHTML = `<div class="admin-empty"><i data-lucide="sticky-note"></i><p>Nenhuma nota ainda. Clique em "Nova nota" para começar.</p></div>`;
+      if (window.lucide) window.lucide.createIcons();
+      return;
+    }
+    root.innerHTML = '<div class="notes-grid">' + notes.map(n => `
+      <div class="note-card" data-note-id="${n.id}">
+        <input class="note-title" data-note-field="title" value="${escapeAttr(n.title || '')}" placeholder="Título">
+        <textarea class="note-body" data-note-field="body" rows="6" placeholder="Escreva aqui (compras, metas, ideias...)">${escapeHTML(n.body || '')}</textarea>
+        <div class="note-foot">
+          <span class="note-date">${new Date(n.updatedAt || n.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+          <button class="admin-icon-btn danger" data-delete-note title="Excluir nota"><i data-lucide="trash-2"></i></button>
+        </div>
+      </div>
+    `).join('') + '</div>';
+    root.querySelectorAll('.note-card').forEach(card => {
+      const id = card.dataset.noteId;
+      card.querySelectorAll('[data-note-field]').forEach(inp => {
+        inp.addEventListener('change', () => {
+          window.DataStore.updateNote(id, { [inp.dataset.noteField]: inp.value });
+          toast('Nota salva');
+        });
+      });
+      card.querySelector('[data-delete-note]')?.addEventListener('click', () => {
+        if (confirm('Excluir esta nota?')) {
+          window.DataStore.deleteNote(id);
+          toast('Nota excluída');
+          renderNotas();
+        }
+      });
+    });
+    if (window.lucide) window.lucide.createIcons();
+  }
+  $('#btnAddNote')?.addEventListener('click', () => {
+    window.DataStore.saveNote({ title: '', body: '' });
+    renderNotas();
+  });
+
+  // ===== CALENDÁRIO VISUAL =====
+  let calCursor = new Date();
+  calCursor.setDate(1);
+  calCursor.setHours(0, 0, 0, 0);
+
+  function dayStatus(iso, orders, blocked) {
+    if (blocked.some(b => b.date === iso)) return { cls: 'indisponivel', label: 'Indisponível' };
+    const dayOrders = orders.filter(o => o.eventDate === iso && o.status !== 'cancelado');
+    if (dayOrders.some(o => o.status === 'pago' || o.status === 'concluido')) return { cls: 'fechado', label: 'Fechado' };
+    if (dayOrders.length) return { cls: 'interessado', label: 'Interessado' };
+    return { cls: 'disponivel', label: 'Disponível' };
+  }
+
+  function renderCalendario() {
+    const grid = $('#calGrid');
+    if (!grid) return;
+    const orders = window.DataStore.loadOrders();
+    const blocked = window.DataStore.loadBlockedDates();
+    const y = calCursor.getFullYear(), m = calCursor.getMonth();
+    const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+    const label = $('#calMonthLabel');
+    if (label) label.textContent = `${monthNames[m]} ${y}`;
+    const startDow = new Date(y, m, 1).getDay();
+    const daysInMonth = new Date(y, m + 1, 0).getDate();
+    const todayIso = new Date().toISOString().slice(0, 10);
+
+    let cells = '';
+    for (let i = 0; i < startDow; i++) cells += `<div class="cal-cell empty"></div>`;
+    for (let d = 1; d <= daysInMonth; d++) {
+      const iso = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+      const st = dayStatus(iso, orders, blocked);
+      const ord = orders.find(o => o.eventDate === iso && o.status !== 'cancelado');
+      const info = st.cls === 'indisponivel'
+        ? (blocked.find(b => b.date === iso)?.reason || 'Bloqueada')
+        : (ord ? (ord.customerName || 'Evento') : '');
+      cells += `
+        <div class="cal-cell ${st.cls} ${iso === todayIso ? 'today' : ''}" data-cal-day="${iso}" title="${escapeAttr(st.label + (info ? ' · ' + info : ''))}">
+          <span class="cal-num">${d}</span>
+          ${info ? `<span class="cal-info">${escapeHTML(info)}</span>` : ''}
+        </div>`;
+    }
+    grid.innerHTML = cells;
+
+    grid.querySelectorAll('[data-cal-day]').forEach(cell => {
+      cell.addEventListener('click', () => {
+        const iso = cell.dataset.calDay;
+        const isBlocked = blocked.some(b => b.date === iso);
+        const ord = orders.find(o => o.eventDate === iso && o.status !== 'cancelado');
+        if (ord && !isBlocked) { openEventModal(ord.id); return; }
+        if (isBlocked) {
+          if (confirm('Desbloquear esta data?')) {
+            window.DataStore.removeBlockedDate(iso);
+            toast('Data desbloqueada');
+            renderCalendario();
+          }
+        } else {
+          const reason = prompt('Bloquear esta data no site? Motivo (opcional):', '');
+          if (reason !== null) {
+            window.DataStore.addBlockedDate(iso, reason.trim());
+            toast('Data bloqueada');
+            renderCalendario();
+          }
+        }
+      });
+    });
+    if (window.lucide) window.lucide.createIcons();
+  }
+  $('#calPrev')?.addEventListener('click', () => { calCursor.setMonth(calCursor.getMonth() - 1); renderCalendario(); });
+  $('#calNext')?.addEventListener('click', () => { calCursor.setMonth(calCursor.getMonth() + 1); renderCalendario(); });
+  $('#calToday')?.addEventListener('click', () => { calCursor = new Date(); calCursor.setDate(1); calCursor.setHours(0, 0, 0, 0); renderCalendario(); });
 
   // ===== INIT =====
   // Aviso de senha padrão

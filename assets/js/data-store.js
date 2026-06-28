@@ -7,6 +7,7 @@
   const STORAGE_KEY = 'casadebia_admin_data_v2';
   const ORDERS_KEY = 'casadebia_orders_v1';
   const BLOCKED_DATES_KEY = 'casadebia_blocked_dates_v1';
+  const NOTES_KEY = 'casadebia_notes_v1';
   // Limpa versão antiga para evitar dados desatualizados durante o desenvolvimento
   try { localStorage.removeItem('casadebia_admin_data_v1'); } catch {}
   const SESSION_KEY = 'casadebia_admin_session';
@@ -358,6 +359,45 @@
     return map;
   };
 
+  // ===== BLOCO DE NOTAS (anotações internas do admin) =====
+  const loadNotes = () => {
+    try {
+      const raw = localStorage.getItem(NOTES_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch { return []; }
+  };
+  const saveNote = (note) => {
+    try {
+      const notes = loadNotes();
+      const newNote = Object.assign({
+        id: 'note_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+        title: '', body: '',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }, note);
+      notes.unshift(newNote);
+      localStorage.setItem(NOTES_KEY, JSON.stringify(notes));
+      return newNote;
+    } catch { return null; }
+  };
+  const updateNote = (id, patch) => {
+    try {
+      const notes = loadNotes();
+      const idx = notes.findIndex(n => n.id === id);
+      if (idx === -1) return false;
+      notes[idx] = Object.assign({}, notes[idx], patch, { updatedAt: new Date().toISOString() });
+      localStorage.setItem(NOTES_KEY, JSON.stringify(notes));
+      return true;
+    } catch { return false; }
+  };
+  const deleteNote = (id) => {
+    try {
+      const notes = loadNotes().filter(n => n.id !== id);
+      localStorage.setItem(NOTES_KEY, JSON.stringify(notes));
+      return true;
+    } catch { return false; }
+  };
+
   // ===== AUTENTICAÇÃO (sessão local — Firebase Auth substitui na 8b) =====
   const isLoggedIn = () => {
     try { return sessionStorage.getItem(SESSION_KEY) === 'authenticated'; }
@@ -397,6 +437,10 @@
     addBlockedDate,
     removeBlockedDate,
     getDateAvailability,
+    loadNotes,
+    saveNote,
+    updateNote,
+    deleteNote,
     isLoggedIn,
     login,
     logout,

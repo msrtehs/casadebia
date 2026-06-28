@@ -39,11 +39,17 @@
         <a class="admin-nav-link active" data-section="dashboard">
           <i data-lucide="layout-dashboard"></i>Dashboard
         </a>
+        <a class="admin-nav-link" data-section="calendario">
+          <i data-lucide="calendar-days"></i>Calendário
+        </a>
         <a class="admin-nav-link" data-section="agenda">
           <i data-lucide="calendar"></i>Agenda
         </a>
         <a class="admin-nav-link" data-section="historico">
           <i data-lucide="receipt"></i>Histórico
+        </a>
+        <a class="admin-nav-link" data-section="notas">
+          <i data-lucide="sticky-note"></i>Bloco de notas
         </a>
       </nav>
 
@@ -276,6 +282,51 @@
         </div>
 
         <div id="servicosRoot"></div>
+      </section>
+
+      <!-- CALENDÁRIO -->
+      <section class="admin-section" id="section-calendario">
+        <div class="admin-page-header">
+          <div>
+            <h1>Calendário</h1>
+            <p>Visão mensal das datas. Clique em um dia livre para bloquear/desbloquear. As alterações refletem no simulador.</p>
+          </div>
+        </div>
+
+        <div class="admin-card">
+          <div class="cal-toolbar">
+            <button class="admin-icon-btn" id="calPrev" aria-label="Mês anterior"><i data-lucide="chevron-left"></i></button>
+            <h2 id="calMonthLabel">—</h2>
+            <button class="admin-icon-btn" id="calNext" aria-label="Próximo mês"><i data-lucide="chevron-right"></i></button>
+            <button class="btn btn-outline btn-sm" id="calToday" style="margin-left:auto;"><i data-lucide="calendar-check"></i>Hoje</button>
+          </div>
+          <div class="cal-legend">
+            <span><i class="cal-dot disponivel"></i>Disponível</span>
+            <span><i class="cal-dot interessado"></i>Interessado</span>
+            <span><i class="cal-dot fechado"></i>Fechado</span>
+            <span><i class="cal-dot indisponivel"></i>Indisponível</span>
+          </div>
+          <div class="cal-weekdays">
+            <span>Dom</span><span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span><span>Sáb</span>
+          </div>
+          <div class="cal-grid" id="calGrid"></div>
+        </div>
+      </section>
+
+      <!-- BLOCO DE NOTAS -->
+      <section class="admin-section" id="section-notas">
+        <div class="admin-page-header">
+          <div>
+            <h1>Bloco de notas</h1>
+            <p>Anotações internas: compras, metas, ideias, melhorias e projetos futuros.</p>
+          </div>
+          <div class="admin-page-actions">
+            <button class="btn btn-primary btn-sm" id="btnAddNote">
+              <i data-lucide="plus"></i>Nova nota
+            </button>
+          </div>
+        </div>
+        <div id="notasRoot"></div>
       </section>
 
       <!-- AGENDA -->
