@@ -160,9 +160,31 @@
     // ===== ETAPA 1 — PACOTES =====
     const pkgOptions = document.querySelectorAll('.sim-option[data-pkg]');
     const renderPackages = () => {
+      const PKs = window.SIM_PRICING?.packages || {};
       pkgOptions.forEach(opt => {
         opt.classList.toggle('selected', opt.dataset.pkg === state.package);
+        const pk = PKs[opt.dataset.pkg];
+        if (!pk) return;
+        const nameEl = opt.querySelector('.sim-option-name');
+        const capEl = opt.querySelector('.sim-option-cap');
+        const priceEl = opt.querySelector('.sim-option-price');
+        const featEl = opt.querySelector('.sim-option-features');
+        if (nameEl) nameEl.textContent = pk.name;
+        if (capEl) capEl.textContent = `Até ${pk.capacity} pessoas`;
+        if (priceEl) priceEl.innerHTML = `${window.SIM.formatBRL(pk.price)}<small> /evento</small>`;
+        if (featEl && Array.isArray(pk.includedItems)) {
+          featEl.innerHTML = '';
+          pk.includedItems.forEach(t => {
+            const li = document.createElement('li');
+            const ic = document.createElement('i');
+            ic.setAttribute('data-lucide', 'check');
+            li.appendChild(ic);
+            li.appendChild(document.createTextNode(t));
+            featEl.appendChild(li);
+          });
+        }
       });
+      if (window.lucide) window.lucide.createIcons();
     };
     pkgOptions.forEach(opt => {
       opt.addEventListener('click', () => {

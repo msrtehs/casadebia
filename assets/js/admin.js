@@ -531,11 +531,18 @@
             </div>
           </div>
         </div>
+        <div class="admin-field" style="margin-top: var(--space-4);">
+          <label>Itens exibidos no site <small>(lista "o que inclui" no card do simulador — itens livres)</small></label>
+          <div class="array-editor" data-pkg-items="${pkg.id}">
+            ${(pkg.includedItems || []).map((it, i) => arrayRowHTML(it, i)).join('')}
+            <span class="array-add" data-add-pkg-item="${pkg.id}"><i data-lucide="plus"></i>Adicionar item</span>
+          </div>
+        </div>
       </div>
     `).join('');
 
-    // Listeners
-    root.querySelectorAll('[data-pkg]').forEach(inp => {
+    // Listeners — campos simples
+    root.querySelectorAll('[data-pkg][data-field]').forEach(inp => {
       inp.addEventListener('change', () => {
         const pkgId = inp.dataset.pkg;
         const field = inp.dataset.field;
@@ -546,6 +553,30 @@
         persist();
       });
     });
+
+    // Listeners — itens livres (includedItems) por pacote
+    root.querySelectorAll('[data-pkg-items]').forEach(container => {
+      const pkgId = container.dataset.pkgItems;
+      data.packages[pkgId].includedItems = data.packages[pkgId].includedItems || [];
+      const list = data.packages[pkgId].includedItems;
+      container.querySelectorAll('.array-row input').forEach((inp, i) => {
+        inp.addEventListener('change', () => { list[i] = inp.value; persist(); });
+      });
+      container.querySelectorAll('.array-row [data-remove]').forEach(btn => {
+        btn.addEventListener('click', () => { list.splice(+btn.dataset.remove, 1); persist(); renderPacotes(); });
+      });
+    });
+    root.querySelectorAll('[data-add-pkg-item]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const pkgId = btn.dataset.addPkgItem;
+        data.packages[pkgId].includedItems = data.packages[pkgId].includedItems || [];
+        data.packages[pkgId].includedItems.push('Novo item');
+        persist();
+        renderPacotes();
+      });
+    });
+
+    if (window.lucide) window.lucide.createIcons();
   }
 
   // ===== DECORAÇÃO =====
