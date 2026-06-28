@@ -67,6 +67,9 @@
         <a class="admin-nav-link" data-section="servicos">
           <i data-lucide="sparkles"></i>Serviços
         </a>
+        <a class="admin-nav-link" data-section="galeria">
+          <i data-lucide="image"></i>Galeria de mídia
+        </a>
       </nav>
 
       <nav class="admin-nav-group">
@@ -241,6 +244,25 @@
           </div>
         </div>
         <div class="admin-list" id="baloesRoot"></div>
+      </section>
+
+      <!-- GALERIA DE MÍDIA -->
+      <section class="admin-section" id="section-galeria">
+        <div class="admin-page-header">
+          <div>
+            <h1>Galeria de mídia</h1>
+            <p>Gerencie as fotos e vídeos exibidos na página "Fotos" do site. As alterações refletem no site.</p>
+          </div>
+          <div class="admin-page-actions">
+            <button class="btn btn-outline btn-sm" id="btnAddVideo">
+              <i data-lucide="video"></i>Novo vídeo
+            </button>
+            <button class="btn btn-primary btn-sm" id="btnAddPhoto">
+              <i data-lucide="image-plus"></i>Nova foto
+            </button>
+          </div>
+        </div>
+        <div class="media-grid" id="galeriaRoot"></div>
       </section>
 
       <!-- SERVIÇOS -->

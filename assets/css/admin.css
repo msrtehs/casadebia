@@ -1238,3 +1238,60 @@ body.admin-body {
   margin-top: var(--space-1);
 }
 .note-date { font-size: var(--fs-xs); color: var(--gold-dark); }
+
+/* ===== GALERIA DE MÍDIA (admin) ===== */
+.media-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--space-4);
+}
+.media-card {
+  position: relative;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+}
+.media-thumb {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  background: var(--bg);
+}
+.media-thumb img,
+.media-thumb video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.media-type-badge {
+  position: absolute;
+  top: var(--space-2);
+  left: var(--space-2);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  background: rgba(28, 20, 16, 0.7);
+  color: var(--white);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+}
+.media-type-badge i { width: 13px; height: 13px; }
+.media-fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+}
+.media-fields .admin-field label { font-size: var(--fs-xs); }
+.media-del {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  background: rgba(255, 255, 255, 0.92);
+}

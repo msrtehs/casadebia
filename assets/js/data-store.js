@@ -12,6 +12,46 @@
   try { localStorage.removeItem('casadebia_admin_data_v1'); } catch {}
   const SESSION_KEY = 'casadebia_admin_session';
 
+  // ===== GALERIA DE MÍDIA — itens padrão (exibidos em fotos.html, editáveis no painel) =====
+  const _u = (id, w) => `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=${w}&q=80`;
+  const _uf = (id) => `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=1600&q=85`;
+  const _m = (category, id, alt, size = '') => ({
+    id: 'm-' + id.slice(0, 10), category, type: 'image', size,
+    src: _u(id, size === 'wide' ? 1200 : 800), full: _uf(id), alt
+  });
+  const MEDIA_DEFAULTS = [
+    _m('aniversarios', '1530103862676-de8c9debad1d', 'Aniversário com decoração de balões', 'tall'),
+    _m('aniversarios', '1464366400600-7168b8af9bc3', 'Mesa decorada para aniversário'),
+    _m('aniversarios', '1527529482837-4698179dc6ce', 'Bolo de aniversário'),
+    _m('aniversarios', '1492684223066-81342ee5ff30', 'Festa de aniversário'),
+    _m('infantis', '1464047736614-af63643285bf', 'Festa infantil colorida', 'wide'),
+    _m('infantis', '1543872084-c7bd3822856f', 'Decoração infantil com balões'),
+    _m('infantis', '1558636508-e0db3814bd1d', 'Festa infantil com brinquedos'),
+    _m('infantis', '1607344645866-009c320b63e0', 'Pintura facial em festa infantil'),
+    _m('noturnos', '1492684223066-81342ee5ff30', 'Evento noturno com luzes', 'tall'),
+    _m('noturnos', '1519671482749-fd09be7ccebf', 'Festa com DJ'),
+    _m('noturnos', '1429962714451-bb934ecdc4ec', 'Pessoas dançando em festa'),
+    _m('noturnos', '1414235077428-338989a2e8c0', 'Bar e drinks'),
+    _m('churrascos', '1555939594-58d7cb561ad1', 'Churrasqueira com carnes'),
+    _m('churrascos', '1529193591184-b1d58069ecdd', 'Carne na grelha'),
+    _m('churrascos', '1544025162-d76694265947', 'Mesa de churrasco em família', 'wide'),
+    _m('churrascos', '1532636721-a1bf9ada0d41', 'Família reunida em churrasco'),
+    _m('estrutura', '1519167758481-83f550bb49b3', 'Vista geral do salão de eventos', 'wide'),
+    _m('estrutura', '1505691938895-1758d7feb511', 'Área coberta do espaço'),
+    _m('estrutura', '1556909114-f6e7ad7d3136', 'Cozinha gourmet do espaço', 'tall'),
+    _m('estrutura', '1600585154340-be6161a56a0c', 'Área externa do espaço'),
+    _m('estrutura', '1604014237800-1c9102c219da', 'Bar e área de bebidas'),
+    _m('estrutura', '1582719508461-905c673771fd', 'Mesas e cadeiras do espaço')
+  ];
+  // Categorias da galeria (rótulos exibidos nos filtros)
+  const MEDIA_CATEGORIES = [
+    { id: 'aniversarios', label: 'Aniversários' },
+    { id: 'infantis', label: 'Festas Infantis' },
+    { id: 'noturnos', label: 'Eventos Noturnos' },
+    { id: 'churrascos', label: 'Churrascos' },
+    { id: 'estrutura', label: 'Estrutura do Espaço' }
+  ];
+
   // ===== DEFAULTS — Estado inicial dos dados (única fonte de verdade) =====
   const DEFAULTS = {
     auth: {
@@ -42,6 +82,7 @@
       name: 'Bia',
       photo: ''
     },
+    media: MEDIA_DEFAULTS,
     packages: {
       basico:    { id: 'basico',    name: 'Básico',    price: 299.90, capacity: 20,  extraPerGuest: 15, includesGas: false, includesDecoration: false, includesPhotographer: false,
         includedItems: ['Área coberta + banheiro + bar', 'Churrasqueira e choveirão', 'Caixa térmica para bebidas', '+R$ 15 por excedente'] },
@@ -187,6 +228,7 @@
         // Pacotes: preserva edições, mas adiciona pacotes novos do default
         packages: Object.assign({}, DEFAULTS.packages, parsed.packages || {}),
         balloons: parsed.balloons || clone(DEFAULTS.balloons),
+        media: parsed.media || clone(DEFAULTS.media),
         // Decoração: preserva combos/adicionais editados, mas garante chaves novas (ex: promaxIncluded)
         decoration: Object.assign({}, DEFAULTS.decoration, parsed.decoration || {})
       });
@@ -259,6 +301,28 @@
         structureEl.innerHTML = items.map(txt =>
           `<div class="structure-item"><i data-lucide="check-circle-2"></i>${escapeHtml(txt)}</div>`
         ).join('');
+        if (window.lucide) window.lucide.createIcons();
+      }
+      // Galeria de mídia (fotos.html) — render a partir dos dados editáveis
+      const galleryEl = document.getElementById('galleryGrid');
+      const media = data?.media;
+      if (galleryEl && Array.isArray(media)) {
+        const catLabel = (c) => (MEDIA_CATEGORIES.find(x => x.id === c)?.label || c);
+        galleryEl.innerHTML = media.map(it => {
+          const size = it.size === 'wide' || it.size === 'tall' ? ' ' + it.size : '';
+          const tag = catLabel(it.category);
+          if (it.type === 'video') {
+            return `<figure class="gallery-item${size}" data-category="${escapeHtml(it.category)}" data-type="video">
+              <video src="${escapeHtml(it.src)}" controls preload="metadata" ${it.poster ? `poster="${escapeHtml(it.poster)}"` : ''}></video>
+              <span class="gallery-tag">${escapeHtml(tag)}</span>
+            </figure>`;
+          }
+          return `<figure class="gallery-item${size}" data-category="${escapeHtml(it.category)}" data-type="image">
+            <img src="${escapeHtml(it.src)}" data-full="${escapeHtml(it.full || it.src)}" alt="${escapeHtml(it.alt || '')}" loading="lazy">
+            <div class="gallery-zoom-icon"><i data-lucide="zoom-in"></i></div>
+            <span class="gallery-tag">${escapeHtml(tag)}</span>
+          </figure>`;
+        }).join('');
         if (window.lucide) window.lucide.createIcons();
       }
     };
@@ -424,6 +488,7 @@
   window.DataStore = {
     DEFAULTS: clone(DEFAULTS),
     ORDER_STATUSES,
+    MEDIA_CATEGORIES,
     loadData,
     saveData,
     resetData,

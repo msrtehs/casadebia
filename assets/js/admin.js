@@ -56,7 +56,8 @@
     historico: renderHistorico,
     agenda: renderAgenda,
     calendario: renderCalendario,
-    notas: renderNotas
+    notas: renderNotas,
+    galeria: renderGaleria
   };
 
   $$('.admin-nav-link[data-section]').forEach(link => {
@@ -1652,6 +1653,72 @@
   $('#calPrev')?.addEventListener('click', () => { calCursor.setMonth(calCursor.getMonth() - 1); renderCalendario(); });
   $('#calNext')?.addEventListener('click', () => { calCursor.setMonth(calCursor.getMonth() + 1); renderCalendario(); });
   $('#calToday')?.addEventListener('click', () => { calCursor = new Date(); calCursor.setDate(1); calCursor.setHours(0, 0, 0, 0); renderCalendario(); });
+
+  // ===== GALERIA DE MÍDIA =====
+  function renderGaleria() {
+    const root = $('#galeriaRoot');
+    if (!root) return;
+    data.media = data.media || [];
+    const cats = window.DataStore.MEDIA_CATEGORIES || [];
+    const catOptions = (sel) => cats.map(c => `<option value="${c.id}" ${c.id === sel ? 'selected' : ''}>${c.label}</option>`).join('');
+    const sizeOptions = (sel) => [['', 'Normal'], ['wide', 'Largo'], ['tall', 'Alto']]
+      .map(([v, l]) => `<option value="${v}" ${v === (sel || '') ? 'selected' : ''}>${l}</option>`).join('');
+
+    if (!data.media.length) {
+      root.innerHTML = `<div class="admin-empty"><i data-lucide="image-off"></i><p>Nenhuma mídia cadastrada. Adicione fotos ou vídeos.</p></div>`;
+      if (window.lucide) window.lucide.createIcons();
+      return;
+    }
+
+    root.innerHTML = data.media.map((m, idx) => {
+      const thumb = m.type === 'video'
+        ? `<video src="${escapeAttr(m.src)}" preload="metadata" ${m.poster ? `poster="${escapeAttr(m.poster)}"` : ''} muted></video><span class="media-type-badge"><i data-lucide="video"></i>Vídeo</span>`
+        : `<img src="${escapeAttr(m.src)}" alt="" onerror="this.style.opacity='0.15'">`;
+      return `
+        <div class="media-card" data-media-idx="${idx}">
+          <div class="media-thumb">${thumb}</div>
+          <div class="media-fields">
+            <div class="admin-field"><label>Categoria</label><select data-media-field="category">${catOptions(m.category)}</select></div>
+            <div class="admin-field"><label>URL ${m.type === 'video' ? 'do vídeo' : 'da imagem'}</label><input data-media-field="src" value="${escapeAttr(m.src || '')}" placeholder="https://..."></div>
+            ${m.type === 'video'
+              ? `<div class="admin-field"><label>Poster <small>(opcional)</small></label><input data-media-field="poster" value="${escapeAttr(m.poster || '')}" placeholder="https://..."></div>`
+              : `<div class="admin-field"><label>URL ampliada <small>(opcional)</small></label><input data-media-field="full" value="${escapeAttr(m.full || '')}" placeholder="https://..."></div>
+                 <div class="admin-field"><label>Descrição (alt)</label><input data-media-field="alt" value="${escapeAttr(m.alt || '')}"></div>`}
+            <div class="admin-field"><label>Tamanho no mosaico</label><select data-media-field="size">${sizeOptions(m.size)}</select></div>
+          </div>
+          <button class="admin-icon-btn danger media-del" data-del-media="${idx}" title="Excluir"><i data-lucide="trash-2"></i></button>
+        </div>`;
+    }).join('');
+
+    root.querySelectorAll('[data-media-field]').forEach(inp => {
+      inp.addEventListener('change', () => {
+        const idx = +inp.closest('[data-media-idx]').dataset.mediaIdx;
+        const f = inp.dataset.mediaField;
+        data.media[idx][f] = inp.value;
+        persist();
+        if (f === 'src' || f === 'poster' || f === 'size') renderGaleria();
+      });
+    });
+    root.querySelectorAll('[data-del-media]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const idx = +btn.dataset.delMedia;
+        if (confirm('Excluir esta mídia?')) { data.media.splice(idx, 1); persist(); renderGaleria(); }
+      });
+    });
+    if (window.lucide) window.lucide.createIcons();
+  }
+  function addMedia(type) {
+    data.media = data.media || [];
+    const cats = window.DataStore.MEDIA_CATEGORIES || [];
+    const base = { id: 'm-' + Date.now().toString(36), category: cats[0]?.id || 'aniversarios', type, size: '', src: '' };
+    if (type === 'video') base.poster = ''; else { base.full = ''; base.alt = ''; }
+    data.media.unshift(base);
+    persist();
+    renderGaleria();
+    toast(type === 'video' ? 'Vídeo adicionado' : 'Foto adicionada');
+  }
+  $('#btnAddPhoto')?.addEventListener('click', () => addMedia('image'));
+  $('#btnAddVideo')?.addEventListener('click', () => addMedia('video'));
 
   // ===== INIT =====
   // Aviso de senha padrão

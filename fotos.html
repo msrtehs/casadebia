@@ -49,8 +49,9 @@
           </button>
         </div>
 
-        <!-- GRID DE FOTOS -->
-        <div class="gallery-grid">
+        <!-- GRID DE FOTOS — renderizado a partir do painel (DataStore.media); os itens
+             abaixo servem de fallback sem JS e são substituídos ao carregar -->
+        <div class="gallery-grid" id="galleryGrid">
           <!-- ANIVERSÁRIOS -->
           <figure class="gallery-item tall" data-category="aniversarios">
             <img src="https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&w=800&q=80"
