@@ -67,8 +67,43 @@
       if (sec) sec.classList.add('active');
       sections[target]?.();
       window.scrollTo(0, 0);
+      closeDrawer();
     });
   });
+
+  // ===== DRAWER MOBILE =====
+  const sidebar = $('#adminSidebar');
+  const overlay = $('#adminOverlay');
+  function openDrawer() { sidebar?.classList.add('open'); overlay?.classList.add('show'); }
+  function closeDrawer() { sidebar?.classList.remove('open'); overlay?.classList.remove('show'); }
+  $('#btnMenu')?.addEventListener('click', openDrawer);
+  overlay?.addEventListener('click', closeDrawer);
+
+  // ===== PERFIL / AVATAR =====
+  function initials(name) {
+    const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
+    if (!parts.length) return 'CB';
+    return (parts[0][0] + (parts[1] ? parts[1][0] : '')).toUpperCase();
+  }
+  function renderAvatar(el, profile) {
+    if (!el) return;
+    if (profile.photo) {
+      el.innerHTML = `<img src="${escapeAttr(profile.photo)}" alt="" onerror="this.parentElement.textContent='${initials(profile.name)}'">`;
+      el.classList.add('has-photo');
+    } else {
+      el.textContent = initials(profile.name);
+      el.classList.remove('has-photo');
+    }
+  }
+  function applyProfile() {
+    const p = data.profile || { name: 'Bia', photo: '' };
+    renderAvatar($('#sidebarAvatar'), p);
+    renderAvatar($('#topbarAvatar'), p);
+    const nameEl = $('#sidebarName');
+    if (nameEl) nameEl.textContent = 'Casa de Bia';
+    const greet = $('#dashGreeting');
+    if (greet) greet.textContent = `Olá, ${p.name || 'Bia'} 👋`;
+  }
 
   // Logout
   $('#btnLogout')?.addEventListener('click', () => {
@@ -1092,7 +1127,25 @@
     $('#cfgWhatsapp').value = data.config.whatsappNumber;
     $('#cfgGas').value = data.config.gasPrice;
     if ($('#cfgIncludedDecorationImage')) $('#cfgIncludedDecorationImage').value = data.config.includedDecorationImage || '';
+    data.profile = data.profile || { name: 'Bia', photo: '' };
+    if ($('#cfgProfileName')) $('#cfgProfileName').value = data.profile.name || '';
+    if ($('#cfgProfilePhoto')) $('#cfgProfilePhoto').value = data.profile.photo || '';
+    renderAvatar($('#cfgAvatarPreview'), data.profile);
   }
+  $('#cfgProfileName')?.addEventListener('input', (e) => {
+    data.profile = data.profile || {};
+    data.profile.name = e.target.value;
+    renderAvatar($('#cfgAvatarPreview'), data.profile);
+    applyProfile();
+  });
+  $('#cfgProfileName')?.addEventListener('change', persist);
+  $('#cfgProfilePhoto')?.addEventListener('change', (e) => {
+    data.profile = data.profile || {};
+    data.profile.photo = e.target.value.trim();
+    renderAvatar($('#cfgAvatarPreview'), data.profile);
+    applyProfile();
+    persist();
+  });
   $('#cfgWhatsapp')?.addEventListener('change', (e) => {
     data.config.whatsappNumber = e.target.value.replace(/\D/g, '');
     persist();
@@ -1515,5 +1568,6 @@
   // Atualiza link WhatsApp para sair com o numero atualizado
   if (window.CASA_CONFIG) window.CASA_CONFIG.whatsapp.number = data.config.whatsappNumber;
 
+  applyProfile();
   renderDashboard();
 })();

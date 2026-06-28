@@ -14,53 +14,74 @@
 </head>
 <body class="admin-body">
 
+  <!-- TOPBAR (mobile) -->
+  <header class="admin-topbar">
+    <button class="admin-menu-btn" id="btnMenu" aria-label="Abrir menu"><i data-lucide="menu"></i></button>
+    <div class="admin-topbar-brand">
+      <span>Casa de Bia</span>
+    </div>
+    <div class="admin-avatar admin-avatar-sm" id="topbarAvatar">CB</div>
+  </header>
+
   <div class="admin-layout">
     <!-- SIDEBAR -->
-    <aside class="admin-sidebar">
+    <aside class="admin-sidebar" id="adminSidebar">
       <div class="admin-brand">
-        <div class="admin-brand-logo">CB</div>
+        <div class="admin-avatar" id="sidebarAvatar">CB</div>
         <div class="admin-brand-text">
-          <span class="admin-brand-name">Casa de Bia</span>
+          <span class="admin-brand-name" id="sidebarName">Casa de Bia</span>
           <span class="admin-brand-role">Painel Admin</span>
         </div>
       </div>
 
-      <a class="admin-nav-link active" data-section="dashboard">
-        <i data-lucide="layout-dashboard"></i>Dashboard
-      </a>
-      <a class="admin-nav-link" data-section="pacotes">
-        <i data-lucide="package"></i>Pacotes
-      </a>
-      <a class="admin-nav-link" data-section="decoracao">
-        <i data-lucide="palette"></i>Decoração
-      </a>
-      <a class="admin-nav-link" data-section="baloes">
-        <i data-lucide="circle"></i>Balões
-      </a>
-      <a class="admin-nav-link" data-section="servicos">
-        <i data-lucide="sparkles"></i>Serviços
-      </a>
-      <a class="admin-nav-link" data-section="agenda">
-        <i data-lucide="calendar"></i>Agenda
-      </a>
-      <a class="admin-nav-link" data-section="historico">
-        <i data-lucide="receipt"></i>Histórico
-      </a>
-      <a class="admin-nav-link" data-section="config">
-        <i data-lucide="settings"></i>Configurações
-      </a>
+      <nav class="admin-nav-group">
+        <span class="admin-nav-label">Gestão</span>
+        <a class="admin-nav-link active" data-section="dashboard">
+          <i data-lucide="layout-dashboard"></i>Dashboard
+        </a>
+        <a class="admin-nav-link" data-section="agenda">
+          <i data-lucide="calendar"></i>Agenda
+        </a>
+        <a class="admin-nav-link" data-section="historico">
+          <i data-lucide="receipt"></i>Histórico
+        </a>
+      </nav>
+
+      <nav class="admin-nav-group">
+        <span class="admin-nav-label">Catálogo</span>
+        <a class="admin-nav-link" data-section="pacotes">
+          <i data-lucide="package"></i>Pacotes
+        </a>
+        <a class="admin-nav-link" data-section="decoracao">
+          <i data-lucide="palette"></i>Decoração
+        </a>
+        <a class="admin-nav-link" data-section="baloes">
+          <i data-lucide="circle"></i>Balões
+        </a>
+        <a class="admin-nav-link" data-section="servicos">
+          <i data-lucide="sparkles"></i>Serviços
+        </a>
+      </nav>
+
+      <nav class="admin-nav-group">
+        <span class="admin-nav-label">Sistema</span>
+        <a class="admin-nav-link" data-section="config">
+          <i data-lucide="settings"></i>Configurações
+        </a>
+        <a class="admin-nav-link" href="index.html" target="_blank">
+          <i data-lucide="external-link"></i>Ver site
+        </a>
+      </nav>
 
       <div class="admin-nav-spacer"></div>
 
-      <a class="admin-nav-link" href="index.html" target="_blank">
-        <i data-lucide="external-link"></i>Ver site
-      </a>
       <div class="admin-logout">
         <a class="admin-nav-link" id="btnLogout">
           <i data-lucide="log-out"></i>Sair
         </a>
       </div>
     </aside>
+    <div class="admin-overlay" id="adminOverlay"></div>
 
     <!-- MAIN -->
     <main class="admin-main">
@@ -307,6 +328,28 @@
           <div>
             <h1>Configurações</h1>
             <p>Ajustes gerais do site e da conta admin.</p>
+          </div>
+        </div>
+
+        <div class="admin-card">
+          <div class="admin-card-header">
+            <div>
+              <h2>Perfil</h2>
+              <p>Nome e foto exibidos no painel.</p>
+            </div>
+          </div>
+          <div class="profile-edit">
+            <div class="admin-avatar admin-avatar-lg" id="cfgAvatarPreview">CB</div>
+            <div class="admin-grid cols-2" style="flex:1;">
+              <div class="admin-field">
+                <label>Seu nome</label>
+                <input type="text" id="cfgProfileName" placeholder="Ex: Bia">
+              </div>
+              <div class="admin-field">
+                <label>Foto de perfil <small>(URL da imagem)</small></label>
+                <input type="url" id="cfgProfilePhoto" placeholder="https://...">
+              </div>
+            </div>
           </div>
         </div>
 

@@ -22,6 +22,10 @@
       gasPrice: 40,
       includedDecorationImage: 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&w=1200&q=80'
     },
+    profile: {
+      name: 'Bia',
+      photo: ''
+    },
     packages: {
       basico:    { id: 'basico',    name: 'Básico',    price: 299.90, capacity: 20,  extraPerGuest: 15, includesGas: false, includesDecoration: false, includesPhotographer: false },
       essencial: { id: 'essencial', name: 'Essencial', price: 590,    capacity: 120, extraPerGuest: 10, includesGas: false, includesDecoration: false, includesPhotographer: false },
@@ -153,6 +157,7 @@
       // Merge profundo: dados salvos têm prioridade, mas chaves novas dos defaults entram
       const merged = Object.assign(clone(DEFAULTS), parsed, {
         config: Object.assign({}, DEFAULTS.config, parsed.config || {}),
+        profile: Object.assign({}, DEFAULTS.profile, parsed.profile || {}),
         auth: Object.assign({}, DEFAULTS.auth, parsed.auth || {}),
         // Pacotes: preserva edições, mas adiciona pacotes novos do default
         packages: Object.assign({}, DEFAULTS.packages, parsed.packages || {}),
