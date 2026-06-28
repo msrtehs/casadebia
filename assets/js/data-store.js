@@ -20,7 +20,22 @@
     config: {
       whatsappNumber: '5571999652027',
       gasPrice: 40,
-      includedDecorationImage: 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&w=1200&q=80'
+      includedDecorationImage: 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&w=1200&q=80',
+      // Estrutura do espaço — exibida em servicos.html e editável no painel (doc 8)
+      structureItems: [
+        'Área aberta coberta e ventilada',
+        'Banheiros amplos',
+        'Bar montado',
+        'Churrasqueira',
+        'Choveirão',
+        'Caixa térmica/tanque para bebidas',
+        'Cozinha gourmet equipada',
+        'Fogão industrial profissional',
+        '2 freezers à disposição',
+        '10 mesas e 60 cadeiras',
+        'Capacidade para até 200 pessoas',
+        'Ponto de gás disponível'
+      ]
     },
     profile: {
       name: 'Bia',
@@ -148,6 +163,11 @@
   // Deep clone simples (suficiente para JSON-safe data)
   const clone = (obj) => JSON.parse(JSON.stringify(obj));
 
+  // Escapa texto para inserção segura em HTML
+  const escapeHtml = (str) => String(str == null ? '' : str)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+
   // ===== LOAD / SAVE =====
   const loadData = () => {
     try {
@@ -226,6 +246,15 @@
       if (decoImg) {
         const el = document.getElementById('decoDefaultImg');
         if (el) el.src = decoImg;
+      }
+      // Estrutura do espaço (servicos.html) — render a partir dos dados editáveis
+      const structureEl = document.getElementById('structureList');
+      const items = data?.config?.structureItems;
+      if (structureEl && Array.isArray(items)) {
+        structureEl.innerHTML = items.map(txt =>
+          `<div class="structure-item"><i data-lucide="check-circle-2"></i>${escapeHtml(txt)}</div>`
+        ).join('');
+        if (window.lucide) window.lucide.createIcons();
       }
     };
     if (document.readyState === 'loading') {

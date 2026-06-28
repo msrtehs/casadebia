@@ -1131,7 +1131,35 @@
     if ($('#cfgProfileName')) $('#cfgProfileName').value = data.profile.name || '';
     if ($('#cfgProfilePhoto')) $('#cfgProfilePhoto').value = data.profile.photo || '';
     renderAvatar($('#cfgAvatarPreview'), data.profile);
+    renderStructure();
   }
+
+  // Estrutura do espaço (doc 8) — lista livre exibida em servicos.html
+  function renderStructure() {
+    const root = $('#structureRoot');
+    if (!root) return;
+    data.config.structureItems = data.config.structureItems || [];
+    const items = data.config.structureItems;
+    root.innerHTML = items.map((it, i) => arrayRowHTML(it, i)).join('') ||
+      '<p class="help">Nenhum item. Clique em "Novo item".</p>';
+    root.querySelectorAll('.array-row input').forEach((inp, i) => {
+      inp.addEventListener('change', () => { items[i] = inp.value; persist(); });
+    });
+    root.querySelectorAll('.array-row [data-remove]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        items.splice(+btn.dataset.remove, 1);
+        persist();
+        renderStructure();
+      });
+    });
+    if (window.lucide) window.lucide.createIcons();
+  }
+  $('#btnAddStructure')?.addEventListener('click', () => {
+    data.config.structureItems = data.config.structureItems || [];
+    data.config.structureItems.push('Novo item');
+    persist();
+    renderStructure();
+  });
   $('#cfgProfileName')?.addEventListener('input', (e) => {
     data.profile = data.profile || {};
     data.profile.name = e.target.value;
