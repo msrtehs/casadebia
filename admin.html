@@ -242,9 +242,39 @@
         <div class="admin-page-header">
           <div>
             <h1>Serviços</h1>
-            <p>Edite valores, horas e itens dos 8 serviços adicionais.</p>
+            <p>Crie, edite ou remova serviços. Edite valores, horas, profissionais, categorias e imagens.</p>
           </div>
         </div>
+
+        <div class="admin-card">
+          <div class="admin-card-header">
+            <div>
+              <h2>Novo serviço</h2>
+              <p>Crie um serviço escolhendo como ele é cobrado.</p>
+            </div>
+          </div>
+          <div class="admin-grid cols-3" style="align-items:end;">
+            <div class="admin-field">
+              <label>Nome do serviço</label>
+              <input type="text" id="newSvcName" placeholder="Ex: Buffet, Bartender...">
+            </div>
+            <div class="admin-field">
+              <label>Forma de cobrança</label>
+              <select id="newSvcMode">
+                <option value="hours">Por hora</option>
+                <option value="qty-hours">Por profissional × hora</option>
+                <option value="qty-hours-control">Por profissional × hora + controle</option>
+                <option value="type-hours">Por tipo × hora</option>
+                <option value="multi-checkbox">Lista de itens (escolha múltipla)</option>
+                <option value="package">Pacotes (escolha único)</option>
+              </select>
+            </div>
+            <div class="admin-field">
+              <button class="btn btn-primary" id="btnAddService"><i data-lucide="plus"></i>Criar serviço</button>
+            </div>
+          </div>
+        </div>
+
         <div id="servicosRoot"></div>
       </section>
 

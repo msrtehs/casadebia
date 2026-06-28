@@ -837,107 +837,120 @@
     renderAddons();
   });
 
-  // ===== SERVIÇOS =====
+  // ===== SERVIÇOS (genérico — suporta criar/editar/excluir + profissionais) =====
+  // Definição das sub-listas de cada modo (itens, opções, tipos, pacotes)
+  const SVC_LISTS = {
+    items: {
+      label: 'Itens (escolha múltipla)', addLabel: 'Adicionar item', cols: 'cols-2',
+      fields: [{ key: 'name', label: 'Nome' }, { key: 'price', label: 'Preço', money: true }],
+      newRow: () => ({ id: 'it-' + Date.now().toString(36), name: 'Novo item', price: 0 })
+    },
+    controlOptions: {
+      label: 'Opções de controle de acesso', addLabel: 'Adicionar opção', cols: 'cols-2',
+      fields: [{ key: 'name', label: 'Nome' }, { key: 'price', label: 'Preço adicional', money: true }],
+      newRow: () => ({ id: 'ctrl-' + Date.now().toString(36), name: 'Nova opção', price: 0 })
+    },
+    types: {
+      label: 'Tipos (adicional cobrado por hora)', addLabel: 'Adicionar tipo', cols: 'cols-2',
+      fields: [{ key: 'name', label: 'Nome' }, { key: 'extraPerHour', label: 'Adicional/hora', money: true, prefix: '+R$' }],
+      newRow: () => ({ id: 'tp-' + Date.now().toString(36), name: 'Novo tipo', extraPerHour: 0 })
+    },
+    packages: {
+      label: 'Pacotes disponíveis', addLabel: 'Adicionar pacote', cols: 'cols-3',
+      fields: [{ key: 'name', label: 'Nome' }, { key: 'desc', label: 'Descrição' }, { key: 'price', label: 'Preço', money: true }],
+      newRow: () => ({ id: 'pk-' + Date.now().toString(36), name: 'Novo pacote', desc: '', price: 0 })
+    }
+  };
+
+  function subListEditor(svcId, listName, rows) {
+    const def = SVC_LISTS[listName];
+    return `
+      <div class="admin-field" style="margin-top: var(--space-4);">
+        <label>${def.label}</label>
+        <div class="admin-list">
+          ${(rows || []).map((r, i) => `
+            <div class="admin-item open">
+              <div class="admin-item-body" style="padding: var(--space-4); border-top: none;">
+                <div class="admin-grid ${def.cols}" style="gap: var(--space-3);">
+                  ${def.fields.map(f => `
+                    <div class="admin-field">
+                      <label>${f.label}</label>
+                      ${f.money
+                        ? `<div class="admin-field-prefix"><span class="prefix">${f.prefix || 'R$'}</span><input type="number" min="0" data-svc="${svcId}" data-list="${listName}" data-row="${i}" data-key="${f.key}" value="${r[f.key] ?? 0}"></div>`
+                        : `<input data-svc="${svcId}" data-list="${listName}" data-row="${i}" data-key="${f.key}" value="${escapeAttr(r[f.key] || '')}">`}
+                    </div>
+                  `).join('')}
+                </div>
+                <button class="btn btn-ghost btn-sm" data-del-row="${i}" data-svc="${svcId}" data-list="${listName}" style="margin-top: var(--space-3);">
+                  <i data-lucide="trash-2"></i>Remover
+                </button>
+              </div>
+            </div>
+          `).join('')}
+          <span class="array-add" data-add="${svcId}" data-list="${listName}"><i data-lucide="plus"></i>${def.addLabel}</span>
+        </div>
+      </div>
+    `;
+  }
+
   function renderServicos() {
     const root = $('#servicosRoot');
-    root.innerHTML = Object.values(data.services).map(svc => svcCardHTML(svc)).join('');
+    const svcs = Object.values(data.services || {});
+    root.innerHTML = svcs.length
+      ? svcs.map(svcCardHTML).join('')
+      : `<div class="admin-empty"><i data-lucide="sparkles"></i><p>Nenhum serviço cadastrado. Crie o primeiro acima.</p></div>`;
 
-    // Listeners genéricos para campos do serviço
+    // Campos base do serviço (nome, desc, categoria, imagem, hourlyRate)
     root.querySelectorAll('[data-svc-field]').forEach(inp => {
       inp.addEventListener('change', () => {
-        const svcId = inp.dataset.svc;
-        const field = inp.dataset.svcField;
+        const { svc, svcField } = inp.dataset;
         const v = inp.type === 'number' ? Number(inp.value) : inp.value;
-        data.services[svcId][field] = v;
+        data.services[svc][svcField] = v;
+        persist();
+        if (svcField === 'name' || svcField === 'image') renderServicos();
+      });
+    });
+
+    // Edição de linhas de sub-listas
+    root.querySelectorAll('[data-list][data-row][data-key]').forEach(inp => {
+      inp.addEventListener('change', () => {
+        const { svc, list, row, key } = inp.dataset;
+        const v = inp.type === 'number' ? Number(inp.value) : inp.value;
+        data.services[svc][list][+row][key] = v;
         persist();
       });
     });
 
-    // Items da animadora
-    root.querySelectorAll('[data-anim-field]').forEach(inp => {
-      inp.addEventListener('change', () => {
-        const idx = +inp.dataset.idx;
-        const f = inp.dataset.animField;
-        const v = inp.type === 'number' ? Number(inp.value) : inp.value;
-        data.services.animadora.items[idx][f] = v;
-        persist();
-      });
-    });
-    root.querySelectorAll('[data-delete-anim]').forEach(btn => {
+    // Adicionar linha em sub-lista
+    root.querySelectorAll('[data-add][data-list]').forEach(btn => {
       btn.addEventListener('click', () => {
-        const idx = +btn.dataset.deleteAnim;
-        data.services.animadora.items.splice(idx, 1);
-        persist();
-        renderServicos();
-      });
-    });
-    $('#btnAddAnim')?.addEventListener('click', () => {
-      data.services.animadora.items.push({ id: 'anim-' + Date.now(), name: 'Novo serviço', price: 100 });
-      persist();
-      renderServicos();
-    });
-
-    // Tipos do DJ
-    root.querySelectorAll('[data-dj-field]').forEach(inp => {
-      inp.addEventListener('change', () => {
-        const idx = +inp.dataset.idx;
-        const f = inp.dataset.djField;
-        const v = inp.type === 'number' ? Number(inp.value) : inp.value;
-        data.services.dj.types[idx][f] = v;
-        persist();
-      });
-    });
-    root.querySelectorAll('[data-delete-dj]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const idx = +btn.dataset.deleteDj;
-        data.services.dj.types.splice(idx, 1);
-        persist();
-        renderServicos();
-      });
-    });
-    $('#btnAddDj')?.addEventListener('click', () => {
-      data.services.dj.types.push({ id: 'dj-' + Date.now(), name: 'Novo tipo', extraPerHour: 0 });
-      persist();
-      renderServicos();
-    });
-
-    // Pacotes (fotógrafo / storymaker)
-    root.querySelectorAll('[data-pkg-field]').forEach(inp => {
-      inp.addEventListener('change', () => {
-        const svcId = inp.dataset.svc;
-        const idx = +inp.dataset.idx;
-        const f = inp.dataset.pkgField;
-        const v = inp.type === 'number' ? Number(inp.value) : inp.value;
-        data.services[svcId].packages[idx][f] = v;
-        persist();
-      });
-    });
-    root.querySelectorAll('[data-delete-pkg]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const svcId = btn.dataset.svc;
-        const idx = +btn.dataset.deletePkg;
-        data.services[svcId].packages.splice(idx, 1);
-        persist();
-        renderServicos();
-      });
-    });
-    root.querySelectorAll('[data-add-pkg]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const svcId = btn.dataset.addPkg;
-        data.services[svcId].packages.push({ id: svcId + '-' + Date.now(), name: 'Novo pacote', desc: 'Descrição', price: 200 });
+        const svc = btn.dataset.add, list = btn.dataset.list;
+        data.services[svc][list] = data.services[svc][list] || [];
+        data.services[svc][list].push(SVC_LISTS[list].newRow());
         persist();
         renderServicos();
       });
     });
 
-    // Controle segurança
-    root.querySelectorAll('[data-ctrl-field]').forEach(inp => {
-      inp.addEventListener('change', () => {
-        const idx = +inp.dataset.idx;
-        const f = inp.dataset.ctrlField;
-        const v = inp.type === 'number' ? Number(inp.value) : inp.value;
-        data.services.seguranca.controlOptions[idx][f] = v;
+    // Remover linha de sub-lista
+    root.querySelectorAll('[data-del-row]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const { svc, list, delRow } = btn.dataset;
+        data.services[svc][list].splice(+delRow, 1);
         persist();
+        renderServicos();
+      });
+    });
+
+    // Excluir serviço inteiro
+    root.querySelectorAll('[data-del-svc]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.dataset.delSvc;
+        if (confirm(`Excluir o serviço "${data.services[id].name}"? Ele deixará de aparecer no simulador.`)) {
+          delete data.services[id];
+          persist();
+          renderServicos();
+        }
       });
     });
 
@@ -945,182 +958,87 @@
   }
 
   function svcCardHTML(svc) {
+    const id = svc.id;
+    const rate = (label) => `
+      <div class="admin-field">
+        <label>${label}</label>
+        <div class="admin-field-prefix">
+          <span class="prefix">R$</span>
+          <input type="number" min="0" data-svc="${id}" data-svc-field="hourlyRate" value="${svc.hourlyRate || 0}">
+        </div>
+      </div>`;
     let extra = '';
-    if (svc.mode === 'multi-checkbox') {
-      extra = `
-        <div class="admin-field" style="margin-top: var(--space-4);">
-          <label>Itens da animadora</label>
-          <div class="admin-list">
-            ${svc.items.map((it, i) => `
-              <div class="admin-item open">
-                <div class="admin-item-body" style="padding: var(--space-4); border-top: none;">
-                  <div class="admin-grid cols-2" style="gap: var(--space-3);">
-                    <div class="admin-field">
-                      <label>Nome</label>
-                      <input data-anim-field="name" data-idx="${i}" value="${escapeAttr(it.name)}">
-                    </div>
-                    <div class="admin-field">
-                      <label>Preço</label>
-                      <div class="admin-field-prefix">
-                        <span class="prefix">R$</span>
-                        <input type="number" min="0" data-anim-field="price" data-idx="${i}" value="${it.price}">
-                      </div>
-                    </div>
-                  </div>
-                  <button class="btn btn-ghost btn-sm" data-delete-anim="${i}" style="margin-top: var(--space-3);">
-                    <i data-lucide="trash-2"></i>Remover item
-                  </button>
-                </div>
-              </div>
-            `).join('')}
-            <span class="array-add" id="btnAddAnim"><i data-lucide="plus"></i>Adicionar item</span>
-          </div>
-        </div>
-      `;
-    } else if (svc.mode === 'hours' || svc.mode === 'qty-hours') {
-      extra = `
-        <div class="admin-field">
-          <label>Valor por hora</label>
-          <div class="admin-field-prefix">
-            <span class="prefix">R$</span>
-            <input type="number" min="0" data-svc="${svc.id}" data-svc-field="hourlyRate" value="${svc.hourlyRate}">
-          </div>
-        </div>
-      `;
-    } else if (svc.mode === 'qty-hours-control') {
-      extra = `
-        <div class="admin-field">
-          <label>Valor por hora</label>
-          <div class="admin-field-prefix">
-            <span class="prefix">R$</span>
-            <input type="number" min="0" data-svc="${svc.id}" data-svc-field="hourlyRate" value="${svc.hourlyRate}">
-          </div>
-        </div>
-        <div class="admin-field" style="margin-top: var(--space-4);">
-          <label>Opções de controle de acesso</label>
-          <div class="admin-list">
-            ${svc.controlOptions.map((c, i) => `
-              <div class="admin-item open">
-                <div class="admin-item-body" style="padding: var(--space-4); border-top: none;">
-                  <div class="admin-grid cols-2" style="gap: var(--space-3);">
-                    <div class="admin-field">
-                      <label>Nome</label>
-                      <input data-ctrl-field="name" data-idx="${i}" value="${escapeAttr(c.name)}">
-                    </div>
-                    <div class="admin-field">
-                      <label>Preço adicional</label>
-                      <div class="admin-field-prefix">
-                        <span class="prefix">R$</span>
-                        <input type="number" min="0" data-ctrl-field="price" data-idx="${i}" value="${c.price}">
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            `).join('')}
-          </div>
-        </div>
-      `;
-    } else if (svc.mode === 'type-hours') {
-      extra = `
-        <div class="admin-field">
-          <label>Valor base por hora</label>
-          <div class="admin-field-prefix">
-            <span class="prefix">R$</span>
-            <input type="number" min="0" data-svc="${svc.id}" data-svc-field="hourlyRate" value="${svc.hourlyRate}">
-          </div>
-        </div>
-        <div class="admin-field" style="margin-top: var(--space-4);">
-          <label>Tipos de DJ <small>(adicional cobrado por hora)</small></label>
-          <div class="admin-list">
-            ${svc.types.map((t, i) => `
-              <div class="admin-item open">
-                <div class="admin-item-body" style="padding: var(--space-4); border-top: none;">
-                  <div class="admin-grid cols-2" style="gap: var(--space-3);">
-                    <div class="admin-field">
-                      <label>Nome</label>
-                      <input data-dj-field="name" data-idx="${i}" value="${escapeAttr(t.name)}">
-                    </div>
-                    <div class="admin-field">
-                      <label>Adicional/hora</label>
-                      <div class="admin-field-prefix">
-                        <span class="prefix">+R$</span>
-                        <input type="number" min="0" data-dj-field="extraPerHour" data-idx="${i}" value="${t.extraPerHour}">
-                      </div>
-                    </div>
-                  </div>
-                  <button class="btn btn-ghost btn-sm" data-delete-dj="${i}" style="margin-top: var(--space-3);">
-                    <i data-lucide="trash-2"></i>Remover tipo
-                  </button>
-                </div>
-              </div>
-            `).join('')}
-            <span class="array-add" id="btnAddDj"><i data-lucide="plus"></i>Adicionar tipo</span>
-          </div>
-        </div>
-      `;
-    } else if (svc.mode === 'package') {
-      extra = `
-        <div class="admin-field" style="margin-top: var(--space-4);">
-          <label>Pacotes disponíveis</label>
-          <div class="admin-list">
-            ${svc.packages.map((p, i) => `
-              <div class="admin-item open">
-                <div class="admin-item-body" style="padding: var(--space-4); border-top: none;">
-                  <div class="admin-grid cols-3" style="gap: var(--space-3);">
-                    <div class="admin-field">
-                      <label>Nome</label>
-                      <input data-svc="${svc.id}" data-pkg-field="name" data-idx="${i}" value="${escapeAttr(p.name)}">
-                    </div>
-                    <div class="admin-field">
-                      <label>Descrição</label>
-                      <input data-svc="${svc.id}" data-pkg-field="desc" data-idx="${i}" value="${escapeAttr(p.desc)}">
-                    </div>
-                    <div class="admin-field">
-                      <label>Preço</label>
-                      <div class="admin-field-prefix">
-                        <span class="prefix">R$</span>
-                        <input type="number" min="0" data-svc="${svc.id}" data-pkg-field="price" data-idx="${i}" value="${p.price}">
-                      </div>
-                    </div>
-                  </div>
-                  <button class="btn btn-ghost btn-sm" data-svc="${svc.id}" data-delete-pkg="${i}" style="margin-top: var(--space-3);">
-                    <i data-lucide="trash-2"></i>Remover pacote
-                  </button>
-                </div>
-              </div>
-            `).join('')}
-            <span class="array-add" data-add-pkg="${svc.id}"><i data-lucide="plus"></i>Adicionar pacote</span>
-          </div>
-        </div>
-      `;
+    switch (svc.mode) {
+      case 'multi-checkbox':    extra = subListEditor(id, 'items', svc.items); break;
+      case 'hours':
+      case 'qty-hours':         extra = rate('Valor por hora'); break;
+      case 'qty-hours-control': extra = rate('Valor por hora') + subListEditor(id, 'controlOptions', svc.controlOptions); break;
+      case 'type-hours':        extra = rate('Valor base por hora') + subListEditor(id, 'types', svc.types); break;
+      case 'package':           extra = subListEditor(id, 'packages', svc.packages); break;
     }
-
+    const iconInner = svc.image
+      ? `<img src="${escapeAttr(svc.image)}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius-sm);" onerror="this.style.display='none'">`
+      : `<i data-lucide="${svc.icon || 'sparkles'}"></i>`;
     return `
       <div class="admin-card">
         <div class="admin-card-header">
           <div style="display:flex; align-items:center; gap: var(--space-3);">
-            <div class="admin-item-icon"><i data-lucide="${svc.icon}"></i></div>
+            <div class="admin-item-icon">${iconInner}</div>
             <div>
-              <h3>${svc.name}</h3>
-              <p>${svc.desc}</p>
+              <h3>${escapeAttr(svc.name)}</h3>
+              <p>${escapeAttr(svc.desc || '')}${svc.category ? ` · <strong>${escapeAttr(svc.category)}</strong>` : ''}</p>
             </div>
           </div>
+          <button class="admin-icon-btn danger" data-del-svc="${id}" title="Excluir serviço"><i data-lucide="trash-2"></i></button>
         </div>
         <div class="admin-grid cols-2">
           <div class="admin-field">
             <label>Nome do serviço</label>
-            <input data-svc="${svc.id}" data-svc-field="name" value="${escapeAttr(svc.name)}">
+            <input data-svc="${id}" data-svc-field="name" value="${escapeAttr(svc.name)}">
           </div>
           <div class="admin-field">
             <label>Descrição curta</label>
-            <input data-svc="${svc.id}" data-svc-field="desc" value="${escapeAttr(svc.desc)}">
+            <input data-svc="${id}" data-svc-field="desc" value="${escapeAttr(svc.desc || '')}">
+          </div>
+          <div class="admin-field">
+            <label>Categoria / nicho <small>(opcional)</small></label>
+            <input data-svc="${id}" data-svc-field="category" value="${escapeAttr(svc.category || '')}">
+          </div>
+          <div class="admin-field">
+            <label>Imagem <small>(URL, opcional)</small></label>
+            <input data-svc="${id}" data-svc-field="image" value="${escapeAttr(svc.image || '')}">
           </div>
         </div>
         ${extra}
       </div>
     `;
   }
+
+  // Criar novo serviço a partir do formulário "Novo serviço"
+  function newServiceSkeleton(mode, name) {
+    const id = 'svc-' + Date.now().toString(36);
+    const base = { id, name, desc: '', category: '', image: '', icon: 'sparkles', mode };
+    switch (mode) {
+      case 'multi-checkbox':    base.items = []; break;
+      case 'hours':
+      case 'qty-hours':         base.hourlyRate = 50; break;
+      case 'qty-hours-control': base.hourlyRate = 50; base.controlOptions = [{ id: 'ctrl-none', name: 'Sem controle', price: 0 }]; break;
+      case 'type-hours':        base.hourlyRate = 50; base.types = []; break;
+      case 'package':           base.packages = []; break;
+    }
+    return base;
+  }
+  $('#btnAddService')?.addEventListener('click', () => {
+    const name = ($('#newSvcName')?.value || '').trim();
+    const mode = $('#newSvcMode')?.value;
+    if (name.length < 2) { toast('Informe um nome para o serviço', 'error'); return; }
+    const svc = newServiceSkeleton(mode, name);
+    data.services[svc.id] = svc;
+    persist();
+    if ($('#newSvcName')) $('#newSvcName').value = '';
+    renderServicos();
+    toast('Serviço criado');
+  });
 
   // ===== CONFIG =====
   function renderConfig() {
