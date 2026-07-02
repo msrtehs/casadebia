@@ -14,104 +14,158 @@
 </head>
 <body class="admin-body">
 
+  <!-- TOPBAR (mobile) -->
+  <header class="admin-topbar">
+    <button class="admin-menu-btn" id="btnMenu" aria-label="Abrir menu"><i data-lucide="menu"></i></button>
+    <div class="admin-topbar-brand">
+      <span>Casa de Bia</span>
+    </div>
+    <div class="admin-avatar admin-avatar-sm" id="topbarAvatar">CB</div>
+  </header>
+
   <div class="admin-layout">
     <!-- SIDEBAR -->
-    <aside class="admin-sidebar">
+    <aside class="admin-sidebar" id="adminSidebar">
       <div class="admin-brand">
-        <div class="admin-brand-logo">CB</div>
+        <div class="admin-avatar" id="sidebarAvatar">CB</div>
         <div class="admin-brand-text">
-          <span class="admin-brand-name">Casa de Bia</span>
+          <span class="admin-brand-name" id="sidebarName">Casa de Bia</span>
           <span class="admin-brand-role">Painel Admin</span>
         </div>
       </div>
 
-      <a class="admin-nav-link active" data-section="dashboard">
-        <i data-lucide="layout-dashboard"></i>Dashboard
-      </a>
-      <a class="admin-nav-link" data-section="pacotes">
-        <i data-lucide="package"></i>Pacotes
-      </a>
-      <a class="admin-nav-link" data-section="decoracao">
-        <i data-lucide="palette"></i>Decoração
-      </a>
-      <a class="admin-nav-link" data-section="baloes">
-        <i data-lucide="circle"></i>Balões
-      </a>
-      <a class="admin-nav-link" data-section="servicos">
-        <i data-lucide="sparkles"></i>Serviços
-      </a>
-      <a class="admin-nav-link" data-section="agenda">
-        <i data-lucide="calendar"></i>Agenda
-      </a>
-      <a class="admin-nav-link" data-section="historico">
-        <i data-lucide="receipt"></i>Histórico
-      </a>
-      <a class="admin-nav-link" data-section="config">
-        <i data-lucide="settings"></i>Configurações
-      </a>
+      <nav class="admin-nav-group">
+        <span class="admin-nav-label">Gestão</span>
+        <a class="admin-nav-link active" data-section="dashboard">
+          <i data-lucide="layout-dashboard"></i>Dashboard
+        </a>
+        <a class="admin-nav-link" data-section="calendario">
+          <i data-lucide="calendar-days"></i>Calendário
+        </a>
+        <a class="admin-nav-link" data-section="agenda">
+          <i data-lucide="calendar"></i>Agenda
+        </a>
+        <a class="admin-nav-link" data-section="historico">
+          <i data-lucide="receipt"></i>Histórico
+        </a>
+        <a class="admin-nav-link" data-section="notas">
+          <i data-lucide="sticky-note"></i>Bloco de notas
+        </a>
+      </nav>
+
+      <nav class="admin-nav-group">
+        <span class="admin-nav-label">Catálogo</span>
+        <a class="admin-nav-link" data-section="pacotes">
+          <i data-lucide="package"></i>Pacotes
+        </a>
+        <a class="admin-nav-link" data-section="decoracao">
+          <i data-lucide="palette"></i>Decoração
+        </a>
+        <a class="admin-nav-link" data-section="baloes">
+          <i data-lucide="circle"></i>Balões
+        </a>
+        <a class="admin-nav-link" data-section="servicos">
+          <i data-lucide="sparkles"></i>Serviços
+        </a>
+        <a class="admin-nav-link" data-section="galeria">
+          <i data-lucide="image"></i>Galeria de mídia
+        </a>
+      </nav>
+
+      <nav class="admin-nav-group">
+        <span class="admin-nav-label">Sistema</span>
+        <a class="admin-nav-link" data-section="config">
+          <i data-lucide="settings"></i>Configurações
+        </a>
+        <a class="admin-nav-link" href="index.html" target="_blank">
+          <i data-lucide="external-link"></i>Ver site
+        </a>
+      </nav>
 
       <div class="admin-nav-spacer"></div>
 
-      <a class="admin-nav-link" href="index.html" target="_blank">
-        <i data-lucide="external-link"></i>Ver site
-      </a>
       <div class="admin-logout">
         <a class="admin-nav-link" id="btnLogout">
           <i data-lucide="log-out"></i>Sair
         </a>
       </div>
     </aside>
+    <div class="admin-overlay" id="adminOverlay"></div>
 
     <!-- MAIN -->
     <main class="admin-main">
 
       <!-- DASHBOARD -->
       <section class="admin-section active" id="section-dashboard">
-        <div class="admin-page-header">
+        <div class="dash-topbar">
           <div>
-            <h1>Dashboard</h1>
-            <p>Visão geral dos pedidos recebidos pelo simulador.</p>
+            <h1 id="dashGreeting">Olá, Bia 👋</h1>
+            <p id="dashDate">Carregando…</p>
+          </div>
+          <div class="dash-period" id="dashPeriod" role="group" aria-label="Período">
+            <button type="button" data-period="month" class="active">Este mês</button>
+            <button type="button" data-period="30d">30 dias</button>
+            <button type="button" data-period="year">Ano</button>
+            <button type="button" data-period="all">Tudo</button>
           </div>
         </div>
 
-        <div class="stat-cards">
-          <div class="stat-card">
-            <div class="stat-card-icon"><i data-lucide="receipt"></i></div>
-            <div>
-              <div class="stat-card-num" id="statOrders">0</div>
-              <div class="stat-card-label">Total de pedidos</div>
+        <!-- KPIs (renderizados dinamicamente para animação + tendência) -->
+        <div class="stat-cards" id="dashKpis"></div>
+
+        <!-- Gráficos -->
+        <div class="dash-grid cols-2">
+          <div class="admin-card dash-chart-card">
+            <div class="admin-card-header">
+              <div><h2>Faturamento</h2><p>Últimos 6 meses (todos os pedidos).</p></div>
             </div>
+            <div class="dash-canvas-wrap"><canvas id="chartRevenue"></canvas></div>
           </div>
-          <div class="stat-card">
-            <div class="stat-card-icon gold"><i data-lucide="calendar-check"></i></div>
-            <div>
-              <div class="stat-card-num" id="statLast7">0</div>
-              <div class="stat-card-label">Últimos 7 dias</div>
+          <div class="admin-card dash-chart-card">
+            <div class="admin-card-header">
+              <div><h2>Eventos por status</h2><p>No período selecionado.</p></div>
             </div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-card-icon"><i data-lucide="trending-up"></i></div>
-            <div>
-              <div class="stat-card-num" id="statRevenue">R$ 0</div>
-              <div class="stat-card-label">Soma dos orçamentos</div>
-            </div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-card-icon gold"><i data-lucide="bar-chart-3"></i></div>
-            <div>
-              <div class="stat-card-num" id="statAvg">R$ 0</div>
-              <div class="stat-card-label">Ticket médio</div>
-            </div>
+            <div class="dash-canvas-wrap"><canvas id="chartStatus"></canvas></div>
           </div>
         </div>
 
+        <div class="dash-grid cols-2">
+          <div class="admin-card dash-chart-card">
+            <div class="admin-card-header">
+              <div><h2>Pacotes mais vendidos</h2><p>No período selecionado.</p></div>
+            </div>
+            <div class="dash-canvas-wrap"><canvas id="chartPackages"></canvas></div>
+          </div>
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <div><h2>Pipeline financeiro</h2><p>Recebido × a receber no período.</p></div>
+            </div>
+            <div id="dashPipeline"></div>
+          </div>
+        </div>
+
+        <!-- Próximos eventos -->
+        <div class="admin-card">
+          <div class="admin-card-header">
+            <div>
+              <h2>Próximos eventos</h2>
+              <p>Eventos com data futura, do mais próximo ao mais distante.</p>
+            </div>
+            <a class="btn btn-outline btn-sm" onclick="document.querySelector('[data-section=agenda]').click()">
+              <i data-lucide="calendar"></i>Ver agenda
+            </a>
+          </div>
+          <div id="dashUpcoming"></div>
+        </div>
+
+        <!-- Pedidos recentes -->
         <div class="admin-card">
           <div class="admin-card-header">
             <div>
               <h2>Pedidos recentes</h2>
               <p>Últimos 3 orçamentos enviados pelo simulador.</p>
             </div>
-            <a class="btn btn-outline btn-sm" data-section="historico" onclick="document.querySelector('[data-section=historico]').click()">
+            <a class="btn btn-outline btn-sm" onclick="document.querySelector('[data-section=historico]').click()">
               <i data-lucide="arrow-right"></i>Ver todos
             </a>
           </div>
@@ -192,15 +246,109 @@
         <div class="admin-list" id="baloesRoot"></div>
       </section>
 
+      <!-- GALERIA DE MÍDIA -->
+      <section class="admin-section" id="section-galeria">
+        <div class="admin-page-header">
+          <div>
+            <h1>Galeria de mídia</h1>
+            <p>Gerencie as fotos e vídeos exibidos na página "Fotos" do site. As alterações refletem no site.</p>
+          </div>
+          <div class="admin-page-actions">
+            <button class="btn btn-outline btn-sm" id="btnAddVideo">
+              <i data-lucide="video"></i>Novo vídeo
+            </button>
+            <button class="btn btn-primary btn-sm" id="btnAddPhoto">
+              <i data-lucide="image-plus"></i>Nova foto
+            </button>
+          </div>
+        </div>
+        <div class="media-grid" id="galeriaRoot"></div>
+      </section>
+
       <!-- SERVIÇOS -->
       <section class="admin-section" id="section-servicos">
         <div class="admin-page-header">
           <div>
             <h1>Serviços</h1>
-            <p>Edite valores, horas e itens dos 8 serviços adicionais.</p>
+            <p>Crie, edite ou remova serviços. Edite valores, horas, profissionais, categorias e imagens.</p>
           </div>
         </div>
+
+        <div class="admin-card">
+          <div class="admin-card-header">
+            <div>
+              <h2>Novo serviço</h2>
+              <p>Crie um serviço escolhendo como ele é cobrado.</p>
+            </div>
+          </div>
+          <div class="admin-grid cols-3" style="align-items:end;">
+            <div class="admin-field">
+              <label>Nome do serviço</label>
+              <input type="text" id="newSvcName" placeholder="Ex: Buffet, Bartender...">
+            </div>
+            <div class="admin-field">
+              <label>Forma de cobrança</label>
+              <select id="newSvcMode">
+                <option value="hours">Por hora</option>
+                <option value="qty-hours">Por profissional × hora</option>
+                <option value="qty-hours-control">Por profissional × hora + controle</option>
+                <option value="type-hours">Por tipo × hora</option>
+                <option value="multi-checkbox">Lista de itens (escolha múltipla)</option>
+                <option value="package">Pacotes (escolha único)</option>
+              </select>
+            </div>
+            <div class="admin-field">
+              <button class="btn btn-primary" id="btnAddService"><i data-lucide="plus"></i>Criar serviço</button>
+            </div>
+          </div>
+        </div>
+
         <div id="servicosRoot"></div>
+      </section>
+
+      <!-- CALENDÁRIO -->
+      <section class="admin-section" id="section-calendario">
+        <div class="admin-page-header">
+          <div>
+            <h1>Calendário</h1>
+            <p>Visão mensal das datas. Clique em um dia livre para bloquear/desbloquear. As alterações refletem no simulador.</p>
+          </div>
+        </div>
+
+        <div class="admin-card">
+          <div class="cal-toolbar">
+            <button class="admin-icon-btn" id="calPrev" aria-label="Mês anterior"><i data-lucide="chevron-left"></i></button>
+            <h2 id="calMonthLabel">—</h2>
+            <button class="admin-icon-btn" id="calNext" aria-label="Próximo mês"><i data-lucide="chevron-right"></i></button>
+            <button class="btn btn-outline btn-sm" id="calToday" style="margin-left:auto;"><i data-lucide="calendar-check"></i>Hoje</button>
+          </div>
+          <div class="cal-legend">
+            <span><i class="cal-dot disponivel"></i>Disponível</span>
+            <span><i class="cal-dot interessado"></i>Interessado</span>
+            <span><i class="cal-dot fechado"></i>Fechado</span>
+            <span><i class="cal-dot indisponivel"></i>Indisponível</span>
+          </div>
+          <div class="cal-weekdays">
+            <span>Dom</span><span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span><span>Sáb</span>
+          </div>
+          <div class="cal-grid" id="calGrid"></div>
+        </div>
+      </section>
+
+      <!-- BLOCO DE NOTAS -->
+      <section class="admin-section" id="section-notas">
+        <div class="admin-page-header">
+          <div>
+            <h1>Bloco de notas</h1>
+            <p>Anotações internas: compras, metas, ideias, melhorias e projetos futuros.</p>
+          </div>
+          <div class="admin-page-actions">
+            <button class="btn btn-primary btn-sm" id="btnAddNote">
+              <i data-lucide="plus"></i>Nova nota
+            </button>
+          </div>
+        </div>
+        <div id="notasRoot"></div>
       </section>
 
       <!-- AGENDA -->
@@ -268,6 +416,12 @@
             </button>
           </div>
         </div>
+        <div class="dash-period dash-filters" id="historicoFilter" role="group" aria-label="Filtrar por status">
+          <button type="button" data-filter="ativos" class="active">Ativos</button>
+          <button type="button" data-filter="todos">Todos</button>
+          <button type="button" data-filter="concluido">Concluídos</button>
+          <button type="button" data-filter="cancelado">Cancelados</button>
+        </div>
         <div id="historicoRoot"></div>
       </section>
 
@@ -277,6 +431,28 @@
           <div>
             <h1>Configurações</h1>
             <p>Ajustes gerais do site e da conta admin.</p>
+          </div>
+        </div>
+
+        <div class="admin-card">
+          <div class="admin-card-header">
+            <div>
+              <h2>Perfil</h2>
+              <p>Nome e foto exibidos no painel.</p>
+            </div>
+          </div>
+          <div class="profile-edit">
+            <div class="admin-avatar admin-avatar-lg" id="cfgAvatarPreview">CB</div>
+            <div class="admin-grid cols-2" style="flex:1;">
+              <div class="admin-field">
+                <label>Seu nome</label>
+                <input type="text" id="cfgProfileName" placeholder="Ex: Bia">
+              </div>
+              <div class="admin-field">
+                <label>Foto de perfil <small>(URL da imagem)</small></label>
+                <input type="url" id="cfgProfilePhoto" placeholder="https://...">
+              </div>
+            </div>
           </div>
         </div>
 
@@ -305,6 +481,19 @@
               <input type="url" id="cfgIncludedDecorationImage" placeholder="https://...">
             </div>
           </div>
+        </div>
+
+        <div class="admin-card">
+          <div class="admin-card-header">
+            <div>
+              <h2>Estrutura do espaço</h2>
+              <p>Itens exibidos na página "Serviços" do site. Edite livremente conforme o espaço evolui (mesas, cadeiras, freezers...).</p>
+            </div>
+            <button class="btn btn-primary btn-sm" id="btnAddStructure">
+              <i data-lucide="plus"></i>Novo item
+            </button>
+          </div>
+          <div class="array-editor" id="structureRoot"></div>
         </div>
 
         <div class="admin-card">
@@ -340,10 +529,19 @@
     </main>
   </div>
 
+  <!-- MODAL DE DETALHE / GESTÃO DO EVENTO -->
+  <div class="admin-modal" id="eventModal">
+    <div class="admin-modal-card event-modal-card">
+      <button class="event-modal-close" id="eventModalClose" aria-label="Fechar"><i data-lucide="x"></i></button>
+      <div id="eventModalBody"></div>
+    </div>
+  </div>
+
   <!-- TOAST -->
   <div class="admin-toast" id="adminToast"></div>
 
   <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="assets/js/config.js"></script>
   <script src="assets/js/firebase-config.js"></script>
   <script src="assets/js/data-store.js"></script>

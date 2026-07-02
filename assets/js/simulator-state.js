@@ -410,6 +410,52 @@
       }
     }
 
+    // Serviços criados no painel (genérico por modo)
+    const KNOWN_SVC = ['animadora', 'recepcionista', 'fritadeira', 'seguranca', 'garcom', 'dj', 'fotografo', 'storymaker'];
+    Object.keys(SD || {}).forEach(key => {
+      if (KNOWN_SVC.includes(key)) return;
+      const cfg = SD[key];
+      const s = svc[key];
+      if (!cfg || !s?.enabled) return;
+      const rate = cfg.hourlyRate || 0;
+      switch (cfg.mode) {
+        case 'multi-checkbox':
+          (s.items || []).forEach(itemId => {
+            const it = (cfg.items || []).find(i => i.id === itemId);
+            if (it) { items.push({ key: `svc-${key}-${itemId}`, label: `${cfg.name}: ${it.name}`, sub: 'Item', value: it.price }); total += it.price; }
+          });
+          break;
+        case 'hours': {
+          if ((s.hours || 0) > 0) { const c = s.hours * rate; items.push({ key: `svc-${key}`, label: cfg.name, sub: `${s.hours}h × ${formatBRL(rate)}`, value: c }); total += c; }
+          break;
+        }
+        case 'qty-hours': {
+          if ((s.qtd || 0) > 0 && (s.hours || 0) > 0) { const c = s.qtd * s.hours * rate; items.push({ key: `svc-${key}`, label: `${cfg.name} (${s.qtd}x)`, sub: `${s.hours}h × ${formatBRL(rate)}`, value: c }); total += c; }
+          break;
+        }
+        case 'qty-hours-control': {
+          if ((s.qtd || 0) > 0 && (s.hours || 0) > 0) {
+            const c = s.qtd * s.hours * rate;
+            items.push({ key: `svc-${key}`, label: `${cfg.name} (${s.qtd}x)`, sub: `${s.hours}h × ${formatBRL(rate)}`, value: c });
+            total += c;
+            const ctrl = (cfg.controlOptions || []).find(x => x.id === s.controle);
+            if (ctrl && ctrl.price > 0) { items.push({ key: `svc-${key}-ctrl`, label: `Controle: ${ctrl.name}`, sub: 'Adicional', value: ctrl.price }); total += ctrl.price; }
+          }
+          break;
+        }
+        case 'type-hours': {
+          const t = (cfg.types || []).find(x => x.id === s.tipo);
+          if (t && (s.hours || 0) > 0) { const r = rate + (t.extraPerHour || 0); const c = r * s.hours; items.push({ key: `svc-${key}`, label: `${cfg.name}: ${t.name}`, sub: `${s.hours}h × ${formatBRL(r)}`, value: c }); total += c; }
+          break;
+        }
+        case 'package': {
+          const p = (cfg.packages || []).find(x => x.id === s.pacote);
+          if (p) { items.push({ key: `svc-${key}`, label: `${cfg.name}: ${p.name}`, sub: 'Pacote', value: p.price }); total += p.price; }
+          break;
+        }
+      }
+    });
+
     return { items, total };
   };
 

@@ -160,9 +160,31 @@
     // ===== ETAPA 1 — PACOTES =====
     const pkgOptions = document.querySelectorAll('.sim-option[data-pkg]');
     const renderPackages = () => {
+      const PKs = window.SIM_PRICING?.packages || {};
       pkgOptions.forEach(opt => {
         opt.classList.toggle('selected', opt.dataset.pkg === state.package);
+        const pk = PKs[opt.dataset.pkg];
+        if (!pk) return;
+        const nameEl = opt.querySelector('.sim-option-name');
+        const capEl = opt.querySelector('.sim-option-cap');
+        const priceEl = opt.querySelector('.sim-option-price');
+        const featEl = opt.querySelector('.sim-option-features');
+        if (nameEl) nameEl.textContent = pk.name;
+        if (capEl) capEl.textContent = `Até ${pk.capacity} pessoas`;
+        if (priceEl) priceEl.innerHTML = `${window.SIM.formatBRL(pk.price)}<small> /evento</small>`;
+        if (featEl && Array.isArray(pk.includedItems)) {
+          featEl.innerHTML = '';
+          pk.includedItems.forEach(t => {
+            const li = document.createElement('li');
+            const ic = document.createElement('i');
+            ic.setAttribute('data-lucide', 'check');
+            li.appendChild(ic);
+            li.appendChild(document.createTextNode(t));
+            featEl.appendChild(li);
+          });
+        }
       });
+      if (window.lucide) window.lucide.createIcons();
     };
     pkgOptions.forEach(opt => {
       opt.addEventListener('click', () => {
@@ -637,59 +659,99 @@
     const svcContainer = document.getElementById('svcList');
 
     // Garante estrutura inicial dos serviços
-    const ensureServices = () => {
-      state.services = state.services || {};
-      const defaults = {
-        animadora:     { enabled: false, items: [] },
-        recepcionista: { enabled: false, hours: 0 },
-        fritadeira:    { enabled: false, hours: 0 },
-        seguranca:     { enabled: false, qtd: 0, hours: 0, controle: 'nenhum' },
-        garcom:        { enabled: false, qtd: 0, hours: 0 },
-        dj:            { enabled: false, tipo: null, hours: 0 },
-        fotografo:     { enabled: false, pacote: null },
-        storymaker:    { enabled: false, pacote: null }
-      };
-      Object.keys(defaults).forEach(k => {
-        state.services[k] = Object.assign({}, defaults[k], state.services[k] || {});
-      });
+    // Estado padrão de um serviço conforme seu modo (suporta serviços criados no painel)
+    const serviceStateDefault = (cfg) => {
+      switch (cfg?.mode) {
+        case 'multi-checkbox':     return { enabled: false, items: [] };
+        case 'hours':              return { enabled: false, hours: 0 };
+        case 'qty-hours':          return { enabled: false, qtd: 0, hours: 0 };
+        case 'qty-hours-control':  return { enabled: false, qtd: 0, hours: 0, controle: cfg.controlOptions?.[0]?.id || null };
+        case 'type-hours':         return { enabled: false, tipo: null, hours: 0 };
+        case 'package':            return { enabled: false, pacote: null };
+        default:                   return { enabled: false };
+      }
     };
 
-    // Calcula subtotal de um serviço específico
+    const ensureServices = () => {
+      state.services = state.services || {};
+      const SD = window.SERVICES_DATA || {};
+      Object.keys(SD).forEach(k => {
+        state.services[k] = Object.assign({}, serviceStateDefault(SD[k]), state.services[k] || {});
+      });
+      // Remove estado de serviços que não existem mais (excluídos no painel)
+      Object.keys(state.services).forEach(k => { if (!SD[k]) delete state.services[k]; });
+    };
+
+    // Calcula subtotal de um serviço — genérico por modo (suporta serviços do painel)
     const serviceSubtotal = (key) => {
       const svc = state.services[key];
       if (!svc?.enabled) return 0;
-      const SD = window.SERVICES_DATA;
+      const cfg = window.SERVICES_DATA?.[key];
+      if (!cfg) return 0;
 
-      switch (key) {
-        case 'animadora':
+      switch (cfg.mode) {
+        case 'multi-checkbox':
           return (svc.items || []).reduce((s, id) => {
-            const it = SD.animadora.items.find(i => i.id === id);
+            const it = (cfg.items || []).find(i => i.id === id);
             return s + (it?.price || 0);
           }, 0);
-        case 'recepcionista': return (svc.hours || 0) * SD.recepcionista.hourlyRate;
-        case 'fritadeira':    return (svc.hours || 0) * SD.fritadeira.hourlyRate;
-        case 'seguranca': {
-          const base = (svc.qtd || 0) * (svc.hours || 0) * SD.seguranca.hourlyRate;
-          const ctrl = SD.seguranca.controlOptions.find(c => c.id === svc.controle);
+        case 'hours':
+          return (svc.hours || 0) * (cfg.hourlyRate || 0);
+        case 'qty-hours':
+          return (svc.qtd || 0) * (svc.hours || 0) * (cfg.hourlyRate || 0);
+        case 'qty-hours-control': {
+          const base = (svc.qtd || 0) * (svc.hours || 0) * (cfg.hourlyRate || 0);
+          const ctrl = (cfg.controlOptions || []).find(c => c.id === svc.controle);
           return base + (ctrl?.price || 0);
         }
-        case 'garcom':        return (svc.qtd || 0) * (svc.hours || 0) * SD.garcom.hourlyRate;
-        case 'dj': {
-          const t = SD.dj.types.find(x => x.id === svc.tipo);
+        case 'type-hours': {
+          const t = (cfg.types || []).find(x => x.id === svc.tipo);
           if (!t) return 0;
-          return (svc.hours || 0) * (SD.dj.hourlyRate + t.extraPerHour);
+          return (svc.hours || 0) * ((cfg.hourlyRate || 0) + (t.extraPerHour || 0));
         }
-        case 'fotografo': {
-          const p = SD.fotografo.packages.find(x => x.id === svc.pacote);
-          return p?.price || 0;
-        }
-        case 'storymaker': {
-          const p = SD.storymaker.packages.find(x => x.id === svc.pacote);
+        case 'package': {
+          const p = (cfg.packages || []).find(x => x.id === svc.pacote);
           return p?.price || 0;
         }
         default: return 0;
       }
     };
+
+    // Descrição curta de um serviço (usada no resumo/WhatsApp para serviços criados no painel)
+    const describeService = (key) => {
+      const cfg = window.SERVICES_DATA?.[key];
+      const svc = state.services[key];
+      const value = serviceSubtotal(key);
+      let detail = '';
+      switch (cfg?.mode) {
+        case 'multi-checkbox':
+          detail = (svc.items || []).map(id => (cfg.items || []).find(i => i.id === id)?.name).filter(Boolean).join(', ');
+          break;
+        case 'hours': detail = `${svc.hours}h`; break;
+        case 'qty-hours': detail = `${svc.qtd}x / ${svc.hours}h`; break;
+        case 'qty-hours-control': {
+          const ctrl = (cfg.controlOptions || []).find(c => c.id === svc.controle);
+          detail = `${svc.qtd}x / ${svc.hours}h${ctrl && ctrl.price > 0 ? ', ' + ctrl.name.toLowerCase() : ''}`;
+          break;
+        }
+        case 'type-hours': {
+          const t = (cfg.types || []).find(x => x.id === svc.tipo);
+          detail = `${t ? t.name : ''} · ${svc.hours}h`;
+          break;
+        }
+        case 'package': {
+          const p = (cfg.packages || []).find(x => x.id === svc.pacote);
+          detail = p ? p.name : '';
+          break;
+        }
+      }
+      return { name: cfg?.name || key, detail, value };
+    };
+    // Serviços criados no painel (fora dos 8 padrão), ativos (valor > 0)
+    const extraActiveServices = () =>
+      Object.keys(window.SERVICES_DATA || {})
+        .filter(k => !['animadora', 'recepcionista', 'fritadeira', 'seguranca', 'garcom', 'dj', 'fotografo', 'storymaker'].includes(k))
+        .filter(k => state.services[k]?.enabled && serviceSubtotal(k) > 0);
 
     // Renderiza o body de cada serviço conforme seu modo
     const renderServiceBody = (key) => {
@@ -834,22 +896,33 @@
       }
     };
 
+    const KNOWN_SERVICES = ['animadora', 'recepcionista', 'fritadeira', 'seguranca', 'garcom', 'dj', 'fotografo', 'storymaker'];
+    const serviceOrder = () => {
+      const SD = window.SERVICES_DATA || {};
+      const known = KNOWN_SERVICES.filter(k => SD[k]);
+      const extra = Object.keys(SD).filter(k => !KNOWN_SERVICES.includes(k));
+      return known.concat(extra);
+    };
+
     const renderServices = () => {
       if (!svcContainer) return;
       const SD = window.SERVICES_DATA;
-      const order = ['animadora', 'recepcionista', 'fritadeira', 'seguranca', 'garcom', 'dj', 'fotografo', 'storymaker'];
 
-      svcContainer.innerHTML = order.map(key => {
+      svcContainer.innerHTML = serviceOrder().map(key => {
         const cfg = SD[key];
+        if (!cfg) return '';
         const svc = state.services[key];
         const subtotal = serviceSubtotal(key);
+        const head = cfg.image
+          ? `<div class="svc-icon"><img src="${cfg.image}" alt="" onerror="this.parentElement.innerHTML='<i data-lucide=&quot;sparkles&quot;></i>'"></div>`
+          : `<div class="svc-icon"><i data-lucide="${cfg.icon || 'sparkles'}"></i></div>`;
         return `
           <div class="svc-card ${svc.enabled ? 'enabled' : ''}" data-svc="${key}">
             <div class="svc-head" data-svc-toggle>
-              <div class="svc-icon"><i data-lucide="${cfg.icon}"></i></div>
+              ${head}
               <div class="svc-head-info">
                 <h4>${cfg.name}</h4>
-                <p>${cfg.desc}</p>
+                <p>${cfg.desc || ''}</p>
               </div>
               <div class="svc-head-right">
                 <span class="svc-head-total ${subtotal > 0 ? 'has-value' : ''}">${window.SIM.formatBRL(subtotal)}</span>
@@ -1209,6 +1282,11 @@
         const p = SD.storymaker.packages.find(x => x.id === svc.storymaker.pacote);
         if (p) svcRows.push({ strongLabel: 'Story Maker', label: p.name, value: window.SIM.formatBRL(p.price) });
       }
+      // Serviços criados no painel
+      extraActiveServices().forEach(k => {
+        const d = describeService(k);
+        svcRows.push({ strongLabel: d.name, label: d.detail, value: window.SIM.formatBRL(d.value) });
+      });
       if (svcRows.length) sections.push({ title: 'Serviços adicionais', rows: svcRows });
 
       // Data
@@ -1393,6 +1471,11 @@
         const p = SD.storymaker.packages.find(x => x.id === svc.storymaker.pacote);
         if (p) svcLines.push(`• Story Maker (${p.name}) — ${fmt(p.price)}`);
       }
+      // Serviços criados no painel
+      extraActiveServices().forEach(k => {
+        const d = describeService(k);
+        svcLines.push(`• ${d.name}${d.detail ? ` (${d.detail})` : ''} — ${fmt(d.value)}`);
+      });
 
       if (svcLines.length) {
         lines.push('🛎️ *Serviços adicionais*');

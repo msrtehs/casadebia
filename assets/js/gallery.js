@@ -50,8 +50,9 @@
     const lbNext = lightbox?.querySelector('.lightbox-next');
     let currentIndex = 0;
 
+    // Lightbox navega apenas por imagens (vídeos tocam inline com controles próprios)
     const visibleItems = () => items.filter(i =>
-      activeCategory === 'all' || i.dataset.category === activeCategory
+      (activeCategory === 'all' || i.dataset.category === activeCategory) && i.dataset.type !== 'video'
     );
 
     const openAt = (idx) => {
@@ -75,6 +76,7 @@
 
     items.forEach((it, i) => {
       it.addEventListener('click', () => {
+        if (it.dataset.type === 'video') return; // vídeo: deixa os controles nativos agirem
         const list = visibleItems();
         const idx = list.indexOf(it);
         if (idx >= 0) openAt(idx);

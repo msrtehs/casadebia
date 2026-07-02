@@ -7,9 +7,50 @@
   const STORAGE_KEY = 'casadebia_admin_data_v2';
   const ORDERS_KEY = 'casadebia_orders_v1';
   const BLOCKED_DATES_KEY = 'casadebia_blocked_dates_v1';
+  const NOTES_KEY = 'casadebia_notes_v1';
   // Limpa versão antiga para evitar dados desatualizados durante o desenvolvimento
   try { localStorage.removeItem('casadebia_admin_data_v1'); } catch {}
   const SESSION_KEY = 'casadebia_admin_session';
+
+  // ===== GALERIA DE MÍDIA — itens padrão (exibidos em fotos.html, editáveis no painel) =====
+  const _u = (id, w) => `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=${w}&q=80`;
+  const _uf = (id) => `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=1600&q=85`;
+  const _m = (category, id, alt, size = '') => ({
+    id: 'm-' + id.slice(0, 10), category, type: 'image', size,
+    src: _u(id, size === 'wide' ? 1200 : 800), full: _uf(id), alt
+  });
+  const MEDIA_DEFAULTS = [
+    _m('aniversarios', '1530103862676-de8c9debad1d', 'Aniversário com decoração de balões', 'tall'),
+    _m('aniversarios', '1464366400600-7168b8af9bc3', 'Mesa decorada para aniversário'),
+    _m('aniversarios', '1527529482837-4698179dc6ce', 'Bolo de aniversário'),
+    _m('aniversarios', '1492684223066-81342ee5ff30', 'Festa de aniversário'),
+    _m('infantis', '1464047736614-af63643285bf', 'Festa infantil colorida', 'wide'),
+    _m('infantis', '1543872084-c7bd3822856f', 'Decoração infantil com balões'),
+    _m('infantis', '1558636508-e0db3814bd1d', 'Festa infantil com brinquedos'),
+    _m('infantis', '1607344645866-009c320b63e0', 'Pintura facial em festa infantil'),
+    _m('noturnos', '1492684223066-81342ee5ff30', 'Evento noturno com luzes', 'tall'),
+    _m('noturnos', '1519671482749-fd09be7ccebf', 'Festa com DJ'),
+    _m('noturnos', '1429962714451-bb934ecdc4ec', 'Pessoas dançando em festa'),
+    _m('noturnos', '1414235077428-338989a2e8c0', 'Bar e drinks'),
+    _m('churrascos', '1555939594-58d7cb561ad1', 'Churrasqueira com carnes'),
+    _m('churrascos', '1529193591184-b1d58069ecdd', 'Carne na grelha'),
+    _m('churrascos', '1544025162-d76694265947', 'Mesa de churrasco em família', 'wide'),
+    _m('churrascos', '1532636721-a1bf9ada0d41', 'Família reunida em churrasco'),
+    _m('estrutura', '1519167758481-83f550bb49b3', 'Vista geral do salão de eventos', 'wide'),
+    _m('estrutura', '1505691938895-1758d7feb511', 'Área coberta do espaço'),
+    _m('estrutura', '1556909114-f6e7ad7d3136', 'Cozinha gourmet do espaço', 'tall'),
+    _m('estrutura', '1600585154340-be6161a56a0c', 'Área externa do espaço'),
+    _m('estrutura', '1604014237800-1c9102c219da', 'Bar e área de bebidas'),
+    _m('estrutura', '1582719508461-905c673771fd', 'Mesas e cadeiras do espaço')
+  ];
+  // Categorias da galeria (rótulos exibidos nos filtros)
+  const MEDIA_CATEGORIES = [
+    { id: 'aniversarios', label: 'Aniversários' },
+    { id: 'infantis', label: 'Festas Infantis' },
+    { id: 'noturnos', label: 'Eventos Noturnos' },
+    { id: 'churrascos', label: 'Churrascos' },
+    { id: 'estrutura', label: 'Estrutura do Espaço' }
+  ];
 
   // ===== DEFAULTS — Estado inicial dos dados (única fonte de verdade) =====
   const DEFAULTS = {
@@ -20,13 +61,37 @@
     config: {
       whatsappNumber: '5571999652027',
       gasPrice: 40,
-      includedDecorationImage: 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&w=1200&q=80'
+      includedDecorationImage: 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&w=1200&q=80',
+      // Estrutura do espaço — exibida em servicos.html e editável no painel (doc 8)
+      structureItems: [
+        'Área aberta coberta e ventilada',
+        'Banheiros amplos',
+        'Bar montado',
+        'Churrasqueira',
+        'Choveirão',
+        'Caixa térmica/tanque para bebidas',
+        'Cozinha gourmet equipada',
+        'Fogão industrial profissional',
+        '2 freezers à disposição',
+        '10 mesas e 60 cadeiras',
+        'Capacidade para até 200 pessoas',
+        'Ponto de gás disponível'
+      ]
     },
+    profile: {
+      name: 'Bia',
+      photo: ''
+    },
+    media: MEDIA_DEFAULTS,
     packages: {
-      basico:    { id: 'basico',    name: 'Básico',    price: 299.90, capacity: 20,  extraPerGuest: 15, includesGas: false, includesDecoration: false, includesPhotographer: false },
-      essencial: { id: 'essencial', name: 'Essencial', price: 590,    capacity: 120, extraPerGuest: 10, includesGas: false, includesDecoration: false, includesPhotographer: false },
-      premium:   { id: 'premium',   name: 'Premium',   price: 899,    capacity: 150, extraPerGuest: 10, includesGas: true,  includesDecoration: true,  includesPhotographer: false },
-      promax:    { id: 'promax',    name: 'Pro Max',   price: 1590,   capacity: 200, extraPerGuest: 0,  includesGas: true,  includesDecoration: true,  includesPhotographer: true }
+      basico:    { id: 'basico',    name: 'Básico',    price: 299.90, capacity: 20,  extraPerGuest: 15, includesGas: false, includesDecoration: false, includesPhotographer: false,
+        includedItems: ['Área coberta + banheiro + bar', 'Churrasqueira e choveirão', 'Caixa térmica para bebidas', '+R$ 15 por excedente'] },
+      essencial: { id: 'essencial', name: 'Essencial', price: 590,    capacity: 120, extraPerGuest: 10, includesGas: false, includesDecoration: false, includesPhotographer: false,
+        includedItems: ['Tudo do Básico', 'Cozinha gourmet + fogão industrial', '2 freezers', '10 mesas e 60 cadeiras', '+R$ 10 por excedente'] },
+      premium:   { id: 'premium',   name: 'Premium',   price: 899,    capacity: 150, extraPerGuest: 10, includesGas: true,  includesDecoration: true,  includesPhotographer: false,
+        includedItems: ['Tudo do Essencial', 'Decoração kit painel (Pegue e Monte)', 'Pula-pula, piscina de bolinha e escorregador', 'Gás incluso', '+R$ 10 por excedente'] },
+      promax:    { id: 'promax',    name: 'Pro Max',   price: 1590,   capacity: 200, extraPerGuest: 0,  includesGas: true,  includesDecoration: true,  includesPhotographer: true,
+        includedItems: ['Tudo do Premium', 'Decoração completa', 'Arco de bolas (até 3 cores) + forro de mesa', 'Equipe de fotografia e filmagem (básico)', 'Lotação máxima — sem cobrança de excedente'] }
     },
     decoration: {
       combos: [
@@ -131,8 +196,23 @@
     }
   };
 
+  // ===== STATUS DOS EVENTOS (única fonte de verdade para cores/labels) =====
+  const ORDER_STATUSES = [
+    { id: 'pendente',   label: 'Pendente',        color: '#8A6E65' },
+    { id: 'aguardando', label: 'Aguardando pgto', color: '#D4A942' },
+    { id: 'parcial',    label: 'Pago parcial',    color: '#E08A2B' },
+    { id: 'pago',       label: 'Pago 100%',       color: '#25D366' },
+    { id: 'concluido',  label: 'Concluído',       color: '#128C7E' },
+    { id: 'cancelado',  label: 'Cancelado',       color: '#A8334A' }
+  ];
+
   // Deep clone simples (suficiente para JSON-safe data)
   const clone = (obj) => JSON.parse(JSON.stringify(obj));
+
+  // Escapa texto para inserção segura em HTML
+  const escapeHtml = (str) => String(str == null ? '' : str)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 
   // ===== LOAD / SAVE =====
   const loadData = () => {
@@ -143,10 +223,12 @@
       // Merge profundo: dados salvos têm prioridade, mas chaves novas dos defaults entram
       const merged = Object.assign(clone(DEFAULTS), parsed, {
         config: Object.assign({}, DEFAULTS.config, parsed.config || {}),
+        profile: Object.assign({}, DEFAULTS.profile, parsed.profile || {}),
         auth: Object.assign({}, DEFAULTS.auth, parsed.auth || {}),
         // Pacotes: preserva edições, mas adiciona pacotes novos do default
         packages: Object.assign({}, DEFAULTS.packages, parsed.packages || {}),
         balloons: parsed.balloons || clone(DEFAULTS.balloons),
+        media: parsed.media || clone(DEFAULTS.media),
         // Decoração: preserva combos/adicionais editados, mas garante chaves novas (ex: promaxIncluded)
         decoration: Object.assign({}, DEFAULTS.decoration, parsed.decoration || {})
       });
@@ -212,6 +294,37 @@
         const el = document.getElementById('decoDefaultImg');
         if (el) el.src = decoImg;
       }
+      // Estrutura do espaço (servicos.html) — render a partir dos dados editáveis
+      const structureEl = document.getElementById('structureList');
+      const items = data?.config?.structureItems;
+      if (structureEl && Array.isArray(items)) {
+        structureEl.innerHTML = items.map(txt =>
+          `<div class="structure-item"><i data-lucide="check-circle-2"></i>${escapeHtml(txt)}</div>`
+        ).join('');
+        if (window.lucide) window.lucide.createIcons();
+      }
+      // Galeria de mídia (fotos.html) — render a partir dos dados editáveis
+      const galleryEl = document.getElementById('galleryGrid');
+      const media = data?.media;
+      if (galleryEl && Array.isArray(media)) {
+        const catLabel = (c) => (MEDIA_CATEGORIES.find(x => x.id === c)?.label || c);
+        galleryEl.innerHTML = media.map(it => {
+          const size = it.size === 'wide' || it.size === 'tall' ? ' ' + it.size : '';
+          const tag = catLabel(it.category);
+          if (it.type === 'video') {
+            return `<figure class="gallery-item${size}" data-category="${escapeHtml(it.category)}" data-type="video">
+              <video src="${escapeHtml(it.src)}" controls preload="metadata" ${it.poster ? `poster="${escapeHtml(it.poster)}"` : ''}></video>
+              <span class="gallery-tag">${escapeHtml(tag)}</span>
+            </figure>`;
+          }
+          return `<figure class="gallery-item${size}" data-category="${escapeHtml(it.category)}" data-type="image">
+            <img src="${escapeHtml(it.src)}" data-full="${escapeHtml(it.full || it.src)}" alt="${escapeHtml(it.alt || '')}" loading="lazy">
+            <div class="gallery-zoom-icon"><i data-lucide="zoom-in"></i></div>
+            <span class="gallery-tag">${escapeHtml(tag)}</span>
+          </figure>`;
+        }).join('');
+        if (window.lucide) window.lucide.createIcons();
+      }
     };
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', apply, { once: true });
@@ -224,8 +337,22 @@
   const loadOrders = () => {
     try {
       const raw = localStorage.getItem(ORDERS_KEY);
-      return raw ? JSON.parse(raw) : [];
+      const list = raw ? JSON.parse(raw) : [];
+      // Garante campos de gestão (status/valorPago) em pedidos antigos
+      return list.map(o => Object.assign({ status: 'pendente', valorPago: 0 }, o));
     } catch { return []; }
+  };
+
+  // Atualiza campos de um pedido (status, valorPago, etc.) preservando o resto
+  const updateOrder = (id, patch) => {
+    try {
+      const orders = loadOrders();
+      const idx = orders.findIndex(o => o.id === id);
+      if (idx === -1) return false;
+      orders[idx] = Object.assign({}, orders[idx], patch || {});
+      localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
+      return true;
+    } catch { return false; }
   };
 
   const saveOrder = (order) => {
@@ -296,6 +423,45 @@
     return map;
   };
 
+  // ===== BLOCO DE NOTAS (anotações internas do admin) =====
+  const loadNotes = () => {
+    try {
+      const raw = localStorage.getItem(NOTES_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch { return []; }
+  };
+  const saveNote = (note) => {
+    try {
+      const notes = loadNotes();
+      const newNote = Object.assign({
+        id: 'note_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+        title: '', body: '',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }, note);
+      notes.unshift(newNote);
+      localStorage.setItem(NOTES_KEY, JSON.stringify(notes));
+      return newNote;
+    } catch { return null; }
+  };
+  const updateNote = (id, patch) => {
+    try {
+      const notes = loadNotes();
+      const idx = notes.findIndex(n => n.id === id);
+      if (idx === -1) return false;
+      notes[idx] = Object.assign({}, notes[idx], patch, { updatedAt: new Date().toISOString() });
+      localStorage.setItem(NOTES_KEY, JSON.stringify(notes));
+      return true;
+    } catch { return false; }
+  };
+  const deleteNote = (id) => {
+    try {
+      const notes = loadNotes().filter(n => n.id !== id);
+      localStorage.setItem(NOTES_KEY, JSON.stringify(notes));
+      return true;
+    } catch { return false; }
+  };
+
   // ===== AUTENTICAÇÃO (sessão local — Firebase Auth substitui na 8b) =====
   const isLoggedIn = () => {
     try { return sessionStorage.getItem(SESSION_KEY) === 'authenticated'; }
@@ -321,18 +487,25 @@
   // ===== EXPÕE A API =====
   window.DataStore = {
     DEFAULTS: clone(DEFAULTS),
+    ORDER_STATUSES,
+    MEDIA_CATEGORIES,
     loadData,
     saveData,
     resetData,
     applyToSimulator,
     loadOrders,
     saveOrder,
+    updateOrder,
     deleteOrder,
     clearOrders,
     loadBlockedDates,
     addBlockedDate,
     removeBlockedDate,
     getDateAvailability,
+    loadNotes,
+    saveNote,
+    updateNote,
+    deleteNote,
     isLoggedIn,
     login,
     logout,
